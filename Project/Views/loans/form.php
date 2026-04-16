@@ -1,0 +1,144 @@
+<?php
+declare(strict_types=1);
+
+$mode = $mode ?? 'create';
+$isAdmin = $isAdmin ?? false;
+$form = $form ?? [];
+$errors = $errors ?? [];
+$loan = $loan ?? null;
+$users = $users ?? [];
+$books = $books ?? [];
+$statusOptions = $statusOptions ?? [];
+$requester = $requester ?? [];
+$isEdit = $mode === 'edit';
+$action = $isEdit ? 'loan/update/' . (int) ($form['id'] ?? 0) : 'loan/store';
+?>
+<section class="panel form-panel">
+    <div class="section-head">
+        <div>
+            <p class="eyebrow"><?= $isAdmin ? ($isEdit ? 'Chinh sua phieu muon' : 'Phieu muon moi') : 'Yeu cau muon sach' ?></p>
+            <h1><?= $isAdmin ? ($isEdit ? 'Cap nhat phieu muon' : 'Lap phieu muon sach') : 'Gui yeu cau muon sach' ?></h1>
+        </div>
+        <a class="text-link" href="index.php?url=loan/index">Quay lai danh sach phieu muon</a>
+    </div>
+
+    <form method="post" action="index.php?url=<?= htmlspecialchars($action, ENT_QUOTES, 'UTF-8') ?>" class="form-grid">
+        <?php if (!empty($errors['general'])): ?>
+            <div class="inline-error"><?= htmlspecialchars((string) $errors['general'], ENT_QUOTES, 'UTF-8') ?></div>
+        <?php endif; ?>
+
+        <?php if ($isAdmin): ?>
+            <div class="form-columns">
+                <label class="field">
+                    <span>Thanh vien</span>
+                    <select name="user_id">
+                        <option value="">Chon thanh vien</option>
+                        <?php foreach ($users as $user): ?>
+                            <option value="<?= (int) $user['id'] ?>"<?= (string) ($form['user_id'] ?? '') === (string) $user['id'] ? ' selected' : '' ?>>
+                                <?= htmlspecialchars((string) $user['full_name'], ENT_QUOTES, 'UTF-8') ?> - <?= htmlspecialchars((string) $user['username'], ENT_QUOTES, 'UTF-8') ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
+                    <?php if (!empty($errors['user_id'])): ?>
+                        <small class="field-error"><?= htmlspecialchars((string) $errors['user_id'], ENT_QUOTES, 'UTF-8') ?></small>
+                    <?php endif; ?>
+                </label>
+
+                <label class="field">
+                    <span>Sach</span>
+                    <select name="book_id">
+                        <option value="">Chon sach</option>
+                        <?php foreach ($books as $book): ?>
+                            <option value="<?= (int) $book['id'] ?>"<?= (string) ($form['book_id'] ?? '') === (string) $book['id'] ? ' selected' : '' ?>>
+                                <?= htmlspecialchars((string) $book['title'], ENT_QUOTES, 'UTF-8') ?> (<?= (int) $book['available_quantity'] ?> con)
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
+                    <?php if (!empty($errors['book_id'])): ?>
+                        <small class="field-error"><?= htmlspecialchars((string) $errors['book_id'], ENT_QUOTES, 'UTF-8') ?></small>
+                    <?php endif; ?>
+                </label>
+
+                <label class="field">
+                    <span>Ngay muon</span>
+                    <input type="date" name="borrow_date" value="<?= htmlspecialchars((string) ($form['borrow_date'] ?? ''), ENT_QUOTES, 'UTF-8') ?>">
+                    <?php if (!empty($errors['borrow_date'])): ?>
+                        <small class="field-error"><?= htmlspecialchars((string) $errors['borrow_date'], ENT_QUOTES, 'UTF-8') ?></small>
+                    <?php endif; ?>
+                </label>
+
+                <label class="field">
+                    <span>Han tra</span>
+                    <input type="date" name="due_date" value="<?= htmlspecialchars((string) ($form['due_date'] ?? ''), ENT_QUOTES, 'UTF-8') ?>">
+                    <?php if (!empty($errors['due_date'])): ?>
+                        <small class="field-error"><?= htmlspecialchars((string) $errors['due_date'], ENT_QUOTES, 'UTF-8') ?></small>
+                    <?php endif; ?>
+                </label>
+
+                <label class="field">
+                    <span>Trang thai</span>
+                    <select name="status">
+                        <?php foreach ($statusOptions as $status => $label): ?>
+                            <option value="<?= htmlspecialchars($status, ENT_QUOTES, 'UTF-8') ?>"<?= ($form['status'] ?? 'borrowed') === $status ? ' selected' : '' ?>>
+                                <?= htmlspecialchars($label, ENT_QUOTES, 'UTF-8') ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
+                    <?php if (!empty($errors['status'])): ?>
+                        <small class="field-error"><?= htmlspecialchars((string) $errors['status'], ENT_QUOTES, 'UTF-8') ?></small>
+                    <?php endif; ?>
+                </label>
+
+                <label class="field">
+                    <span>Ngay tra thuc te</span>
+                    <input type="date" name="returned_date" value="<?= htmlspecialchars((string) ($form['returned_date'] ?? ''), ENT_QUOTES, 'UTF-8') ?>">
+                    <?php if (!empty($errors['returned_date'])): ?>
+                        <small class="field-error"><?= htmlspecialchars((string) $errors['returned_date'], ENT_QUOTES, 'UTF-8') ?></small>
+                    <?php endif; ?>
+                </label>
+            </div>
+        <?php else: ?>
+            <div class="info-card">
+                <strong>Thong tin yeu cau</strong>
+                <p>Ban doc: <?= htmlspecialchars((string) ($requester['full_name'] ?? $requester['username'] ?? 'Thanh vien'), ENT_QUOTES, 'UTF-8') ?></p>
+                <p>Quy trinh: Ban gui yeu cau, thu thu se duyet va cap nhat han tra khi giao sach.</p>
+            </div>
+
+            <label class="field">
+                <span>Sach can muon</span>
+                <select name="book_id">
+                    <option value="">Chon sach</option>
+                    <?php foreach ($books as $book): ?>
+                        <option value="<?= (int) $book['id'] ?>"<?= (string) ($form['book_id'] ?? '') === (string) $book['id'] ? ' selected' : '' ?>>
+                            <?= htmlspecialchars((string) $book['title'], ENT_QUOTES, 'UTF-8') ?> - <?= htmlspecialchars((string) $book['author'], ENT_QUOTES, 'UTF-8') ?> (<?= (int) $book['available_quantity'] ?> con)
+                        </option>
+                    <?php endforeach; ?>
+                </select>
+                <?php if (!empty($errors['book_id'])): ?>
+                    <small class="field-error"><?= htmlspecialchars((string) $errors['book_id'], ENT_QUOTES, 'UTF-8') ?></small>
+                <?php endif; ?>
+            </label>
+        <?php endif; ?>
+
+        <label class="field">
+            <span>Ghi chu</span>
+            <textarea name="notes" rows="4" placeholder="<?= $isAdmin ? 'Ghi chu ve phieu muon, tinh trang sach, yeu cau bo sung...' : 'Neu can, ban co the ghi them muc dich muon sach hoac thong tin can luu y.' ?>"><?= htmlspecialchars((string) ($form['notes'] ?? ''), ENT_QUOTES, 'UTF-8') ?></textarea>
+            <?php if (!empty($errors['notes'])): ?>
+                <small class="field-error"><?= htmlspecialchars((string) $errors['notes'], ENT_QUOTES, 'UTF-8') ?></small>
+            <?php endif; ?>
+        </label>
+
+        <?php if ($loan !== null): ?>
+            <div class="info-card">
+                <strong>Thong tin hien tai</strong>
+                <p>Thanh vien: <?= htmlspecialchars((string) $loan['full_name'], ENT_QUOTES, 'UTF-8') ?></p>
+                <p>Sach: <?= htmlspecialchars((string) $loan['book_title'], ENT_QUOTES, 'UTF-8') ?></p>
+            </div>
+        <?php endif; ?>
+
+        <div class="form-actions">
+            <button type="submit" class="button button-primary"><?= $isAdmin ? ($isEdit ? 'Luu phieu muon' : 'Lap phieu muon') : 'Gui yeu cau' ?></button>
+            <a class="button button-secondary" href="index.php?url=loan/index">Huy</a>
+        </div>
+    </form>
+</section>

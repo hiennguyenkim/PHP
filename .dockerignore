@@ -1,0 +1,14 @@
+.git
+.gitignore
+.phpstorm.meta.php
+.psalm-stubs.phpstub
+vendor
+README.md
+LICENSE.md
+COPYRIGHT.md
+composer.json
+composer.lock
+phpcs.xml
+phpunit.xml.dist
+psalm.xml
+renovate.json
