@@ -1,0 +1,24 @@
+<?php
+declare(strict_types=1);
+?>
+<section class="py-5">
+    <div class="mx-auto" style="max-width: 760px;">
+        <div class="text-center mb-4">
+            <div class="display-6 fw-bold text-danger">Đã xảy ra lỗi</div>
+            <p class="text-muted mb-0">
+                <?= $this->escapeHtml((string) ($this->message ?? 'Hệ thống không thể xử lý yêu cầu này.')) ?>
+            </p>
+        </div>
+
+        <?php if (! empty($this->display_exceptions) && isset($this->exception) && $this->exception instanceof \Throwable): ?>
+            <div class="card">
+                <div class="card-body">
+                    <h2 class="h5">Thông tin kỹ thuật</h2>
+                    <p class="mb-2"><strong>Loại lỗi:</strong> <?= $this->escapeHtml(get_class($this->exception)) ?></p>
+                    <p class="mb-2"><strong>Thông điệp:</strong> <?= $this->escapeHtml($this->exception->getMessage()) ?></p>
+                    <p class="mb-0"><strong>Vị trí:</strong> <?= $this->escapeHtml($this->exception->getFile() . ':' . $this->exception->getLine()) ?></p>
+                </div>
+            </div>
+        <?php endif; ?>
+    </div>
+</section>

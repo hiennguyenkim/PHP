@@ -1,0 +1,163 @@
+<?php
+$this->headTitle($isAdmin ? 'Mượn / Trả sách' : 'Phiếu mượn của tôi');
+$this->layout('layout/library-layout');
+$statusMap = [
+    'borrowed' => ['Đang mượn', 'warning'],
+    'returned' => ['Đã trả', 'success'],
+    'overdue' => ['Quá hạn', 'danger'],
+];
+?>
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+    <div>
+        <h1 class="h3 fw-bold mb-0"><i class="bi bi-arrow-left-right me-2 text-primary"></i><?= $isAdmin ? 'Mượn / Trả sách' : 'Phiếu mượn của tôi' ?></h1>
+        <p class="text-muted mb-0"><?= $isAdmin ? 'Theo dõi toàn bộ vòng đời mượn trả của thư viện.' : 'Theo dõi tình trạng các đầu sách bạn đang mượn.' ?></p>
+    </div>
+    <?php if ($isAdmin): ?>
+        <a href="<?= $this->url('library/transaction', ['action' => 'borrow']) ?>" class="btn btn-success">
+            <i class="bi bi-plus-circle me-1"></i>Lập phiếu mượn mới
+        </a>
+    <?php endif; ?>
+</div>
+
+<div class="row g-3 mb-4">
+    <div class="col-md-3">
+        <div class="card border-warning h-100">
+            <div class="card-body">
+                <div class="text-muted small mb-1">Đang mượn</div>
+                <div class="fs-3 fw-bold text-warning"><?= (int) ($summary['borrowed'] ?? 0) ?></div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card border-danger h-100">
+            <div class="card-body">
+                <div class="text-muted small mb-1">Quá hạn</div>
+                <div class="fs-3 fw-bold text-danger"><?= (int) ($summary['overdue'] ?? 0) ?></div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card border-success h-100">
+            <div class="card-body">
+                <div class="text-muted small mb-1">Đã trả</div>
+                <div class="fs-3 fw-bold text-success"><?= (int) ($summary['returned'] ?? 0) ?></div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card border-primary h-100">
+            <div class="card-body">
+                <div class="text-muted small mb-1"><?= $isAdmin ? 'Sắp đến hạn' : 'Sắp đến hạn (7 ngày)' ?></div>
+                <div class="fs-3 fw-bold text-primary"><?= (int) ($summary['due_soon'] ?? 0) ?></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card shadow-sm border-0 mb-4">
+    <div class="card-body">
+        <form method="GET" class="row g-3 align-items-end">
+            <div class="col-lg-5">
+                <label class="form-label fw-semibold">Từ khóa</label>
+                <input type="text" name="search" class="form-control"
+                       value="<?= htmlspecialchars((string) ($filters['search'] ?? '')) ?>"
+                       placeholder="<?= $isAdmin ? 'Tìm theo sách, ISBN hoặc người mượn' : 'Tìm theo sách hoặc ISBN' ?>">
+            </div>
+            <div class="col-lg-3">
+                <label class="form-label fw-semibold">Trạng thái</label>
+                <select name="status" class="form-select">
+                    <option value="">Tất cả trạng thái</option>
+                    <option value="borrowed" <?= ($filters['status'] ?? '') === 'borrowed' ? 'selected' : '' ?>>Đang mượn</option>
+                    <option value="overdue" <?= ($filters['status'] ?? '') === 'overdue' ? 'selected' : '' ?>>Quá hạn</option>
+                    <option value="returned" <?= ($filters['status'] ?? '') === 'returned' ? 'selected' : '' ?>>Đã trả</option>
+                </select>
+            </div>
+            <?php if ($isAdmin): ?>
+                <div class="col-lg-2">
+                    <label class="form-label fw-semibold">Sinh viên</label>
+                    <select name="user_id" class="form-select">
+                        <option value="">Tất cả sinh viên</option>
+                        <?php foreach ($users as $user): ?>
+                            <option value="<?= (int) $user->id ?>" <?= ($filters['user_id'] ?? '') === (string) $user->id ? 'selected' : '' ?>>
+                                <?= htmlspecialchars($user->fullName) ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+            <?php endif; ?>
+            <div class="<?= $isAdmin ? 'col-lg-2' : 'col-lg-4' ?> d-flex gap-2">
+                <button type="submit" class="btn btn-primary w-100">
+                    <i class="bi bi-search me-1"></i>Lọc
+                </button>
+                <a href="<?= $this->url('library/transaction') ?>" class="btn btn-light">Đặt lại</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="card shadow-sm border-0">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>#ID</th>
+                        <th>Tên sách</th>
+                        <th>ISBN</th>
+                        <?php if ($isAdmin): ?>
+                            <th>Sinh viên</th>
+                        <?php endif; ?>
+                        <th>Ngày mượn</th>
+                        <th>Hạn trả</th>
+                        <th>Trạng thái</th>
+                        <th style="width: 160px;">Thao tác</th>
+                    </tr>
+                </thead>
+                <tbody>
+                <?php if ($records === []): ?>
+                    <tr>
+                        <td colspan="<?= $isAdmin ? '8' : '7' ?>" class="text-center py-5 text-muted">
+                            Chưa có phiếu mượn nào phù hợp với bộ lọc hiện tại.
+                        </td>
+                    </tr>
+                <?php else: ?>
+                    <?php foreach ($records as $record): ?>
+                        <?php [$statusLabel, $statusClass] = $statusMap[$record->status] ?? [$record->status, 'secondary']; ?>
+                        <tr>
+                            <td class="text-muted">#<?= (int) $record->id ?></td>
+                            <td class="fw-semibold"><?= htmlspecialchars($record->bookTitle) ?></td>
+                            <td><code><?= htmlspecialchars($record->bookIsbn !== '' ? $record->bookIsbn : '—') ?></code></td>
+                            <?php if ($isAdmin): ?>
+                                <td>
+                                    <?= htmlspecialchars($record->userFullName) ?>
+                                    <small class="text-muted d-block">@<?= htmlspecialchars($record->username) ?></small>
+                                </td>
+                            <?php endif; ?>
+                            <td><?= htmlspecialchars($record->borrowDate) ?></td>
+                            <td class="<?= in_array($record->status, ['borrowed', 'overdue'], true) && $record->returnDate < date('Y-m-d') ? 'text-danger fw-bold' : '' ?>">
+                                <?= htmlspecialchars($record->returnDate) ?>
+                            </td>
+                            <td><span class="badge bg-<?= $statusClass ?>"><?= $statusLabel ?></span></td>
+                            <td>
+                                <?php if ($isAdmin && in_array($record->status, ['borrowed', 'overdue'], true)): ?>
+                                    <form method="POST"
+                                          action="<?= $this->url('library/transaction', ['action' => 'return', 'id' => $record->id]) ?>"
+                                          data-confirm="Xác nhận sinh viên '<?= htmlspecialchars($record->userFullName) ?>' đã trả sách '<?= htmlspecialchars($record->bookTitle) ?>'?">
+                                        <button type="submit" class="btn btn-sm btn-success">
+                                            <i class="bi bi-check-circle me-1"></i>Nhận trả
+                                        </button>
+                                    </form>
+                                <?php elseif (! $isAdmin && in_array($record->status, ['borrowed', 'overdue'], true)): ?>
+                                    <span class="text-muted small">Liên hệ thủ thư để trả sách</span>
+                                <?php else: ?>
+                                    <span class="text-muted small">Hoàn tất</span>
+                                <?php endif; ?>
+                            </td>
+                        </tr>
+                    <?php endforeach; ?>
+                <?php endif; ?>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

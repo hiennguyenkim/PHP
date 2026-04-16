@@ -1,0 +1,158 @@
+<?php
+$this->headTitle($isAdmin ? 'Quản lý sách' : 'Danh mục sách');
+$this->layout('layout/library-layout');
+$statusMap = [
+    'available' => ['Sẵn sàng', 'success'],
+    'borrowed' => ['Đang mượn hết', 'warning'],
+    'unavailable' => ['Tạm khóa', 'secondary'],
+];
+?>
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+    <div>
+        <h1 class="h3 fw-bold mb-0"><i class="bi bi-journals me-2 text-primary"></i><?= $isAdmin ? 'Quản lý sách' : 'Danh mục sách' ?></h1>
+        <p class="text-muted mb-0"><?= $isAdmin ? 'Kiểm soát biên mục, trạng thái lưu thông và bản khả dụng.' : 'Tra cứu nhanh các đầu sách hiện có trong thư viện.' ?></p>
+    </div>
+    <?php if ($isAdmin): ?>
+        <a href="<?= $this->url('library/book', ['action' => 'add']) ?>" class="btn btn-primary">
+            <i class="bi bi-plus-circle me-1"></i>Thêm sách mới
+        </a>
+    <?php endif; ?>
+</div>
+
+<div class="row g-3 mb-4">
+    <div class="col-md-3">
+        <div class="card border-primary h-100">
+            <div class="card-body">
+                <div class="text-muted small mb-1">Tổng đầu sách</div>
+                <div class="fs-3 fw-bold text-primary"><?= (int) ($summary['total_titles'] ?? 0) ?></div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card border-success h-100">
+            <div class="card-body">
+                <div class="text-muted small mb-1">Đầu sách sẵn sàng</div>
+                <div class="fs-3 fw-bold text-success"><?= (int) ($summary['available_titles'] ?? 0) ?></div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card border-warning h-100">
+            <div class="card-body">
+                <div class="text-muted small mb-1">Đầu sách đang mượn hết</div>
+                <div class="fs-3 fw-bold text-warning"><?= (int) ($summary['borrowed_titles'] ?? 0) ?></div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card border-secondary h-100">
+            <div class="card-body">
+                <div class="text-muted small mb-1">Bản khả dụng hiện có</div>
+                <div class="fs-3 fw-bold text-secondary"><?= (int) ($summary['total_copies'] ?? 0) ?></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card shadow-sm border-0 mb-4">
+    <div class="card-body">
+        <form method="GET" class="row g-3 align-items-end">
+            <div class="col-lg-5">
+                <label class="form-label fw-semibold">Từ khóa</label>
+                <input type="text" name="search" class="form-control" value="<?= htmlspecialchars((string) ($filters['search'] ?? '')) ?>"
+                       placeholder="Tìm theo tên sách, tác giả hoặc ISBN">
+            </div>
+            <div class="col-lg-3">
+                <label class="form-label fw-semibold">Thể loại</label>
+                <select name="category" class="form-select">
+                    <option value="">Tất cả thể loại</option>
+                    <?php foreach ($categories as $category): ?>
+                        <option value="<?= htmlspecialchars($category) ?>" <?= ($filters['category'] ?? '') === $category ? 'selected' : '' ?>>
+                            <?= htmlspecialchars($category) ?>
+                        </option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
+            <div class="col-lg-2">
+                <label class="form-label fw-semibold">Trạng thái</label>
+                <select name="status" class="form-select">
+                    <option value="">Tất cả trạng thái</option>
+                    <option value="available" <?= ($filters['status'] ?? '') === 'available' ? 'selected' : '' ?>>Sẵn sàng</option>
+                    <option value="borrowed" <?= ($filters['status'] ?? '') === 'borrowed' ? 'selected' : '' ?>>Đang mượn hết</option>
+                    <option value="unavailable" <?= ($filters['status'] ?? '') === 'unavailable' ? 'selected' : '' ?>>Tạm khóa</option>
+                </select>
+            </div>
+            <div class="col-lg-2 d-flex gap-2">
+                <button type="submit" class="btn btn-primary w-100">
+                    <i class="bi bi-search me-1"></i>Lọc
+                </button>
+                <a href="<?= $this->url('library/book') ?>" class="btn btn-light">Đặt lại</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="card shadow-sm border-0">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th style="width: 70px;">#</th>
+                        <th>Tên sách</th>
+                        <th>Tác giả</th>
+                        <th>ISBN</th>
+                        <th>Thể loại</th>
+                        <th>Bản khả dụng</th>
+                        <th>Trạng thái</th>
+                        <th style="width: 170px;">Thao tác</th>
+                    </tr>
+                </thead>
+                <tbody>
+                <?php if (! count($books)): ?>
+                    <tr>
+                        <td colspan="8" class="text-center py-5 text-muted">
+                            Không tìm thấy đầu sách phù hợp với bộ lọc hiện tại.
+                        </td>
+                    </tr>
+                <?php else: ?>
+                    <?php foreach ($books as $book): ?>
+                        <?php [$statusLabel, $statusClass] = $statusMap[$book->status] ?? [$book->status, 'secondary']; ?>
+                        <tr>
+                            <td class="text-muted"><?= (int) $book->id ?></td>
+                            <td>
+                                <div class="fw-semibold"><?= htmlspecialchars($book->title) ?></div>
+                            </td>
+                            <td><?= htmlspecialchars($book->author) ?></td>
+                            <td><code><?= htmlspecialchars($book->isbn !== '' ? $book->isbn : '—') ?></code></td>
+                            <td><span class="badge bg-light text-dark border"><?= htmlspecialchars($book->category) ?></span></td>
+                            <td><?= (int) $book->quantity ?></td>
+                            <td><span class="badge bg-<?= $statusClass ?>"><?= $statusLabel ?></span></td>
+                            <td>
+                                <?php if ($isAdmin): ?>
+                                    <div class="d-flex gap-2">
+                                        <a href="<?= $this->url('library/book', ['action' => 'edit', 'id' => $book->id]) ?>"
+                                           class="btn btn-sm btn-outline-primary">
+                                            <i class="bi bi-pencil"></i>
+                                        </a>
+                                        <form method="POST"
+                                              action="<?= $this->url('library/book', ['action' => 'delete', 'id' => $book->id]) ?>"
+                                              data-confirm="Bạn có chắc muốn xóa sách '<?= htmlspecialchars($book->title) ?>'?"
+                                              class="d-inline">
+                                            <button type="submit" class="btn btn-sm btn-outline-danger">
+                                                <i class="bi bi-trash"></i>
+                                            </button>
+                                        </form>
+                                    </div>
+                                <?php else: ?>
+                                    <span class="text-muted small">Chỉ xem</span>
+                                <?php endif; ?>
+                            </td>
+                        </tr>
+                    <?php endforeach; ?>
+                <?php endif; ?>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

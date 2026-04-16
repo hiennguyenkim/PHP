@@ -1,232 +1,185 @@
-# laminas-mvc-skeleton
+# HCMUE Library — Hệ thống Quản lý Thư viện
 
-> ## 🇷🇺 Русским гражданам
->
-> Мы, участники Laminas, родились и живем в разных странах. У многих из нас есть друзья, родственники и коллеги как в России, так и в Украине. Некоторые из нас родились в России. Некоторые из нас живут в России. У некоторых бабушки и дедушки сражались с фашистами во Второй мировой войне. Здесь никто не поддерживает фашизм.
->
-> У одного из нас есть украинская родственница, которая спаслась из дома вместе с сыном. Поезд задержался из-за бомбежки на дороге впереди. У нас есть друзья, которые прячутся в бомбоубежищах. Мы с тревогой ждем весточки от них после воздушных налетов, которые беспорядочно наносят удары и попадают по больницам, школам, детским садам и домам. Мы не берем это из каких-либо СМИ. Мы наблюдаем это напрямую.
->
-> Вы доверяете нам достаточно, чтоб использовать наши программы, и мы просим вас довериться нам вновь. Мы нуждаемся в помощи. Выходите и протестуйте против этой бесполезной войны. Остановите кровопролитие. Скажите "Нет войне!"
->
-> ## 🇺🇸 To Citizens of Russia
->
-> We at Laminas come from all over the world. Many of us have friends, family and colleagues in both Russia and Ukraine. Some of us were born in Russia. Some of us currently live in Russia. Some have grandparents who fought Nazis in World War II. Nobody here supports fascism.
->
-> One team member has a Ukrainian relative who fled her home with her son. The train was delayed due to bombing on the road ahead. We have friends who are hiding in bomb shelters. We anxiously follow up on them after the air raids, which indiscriminately fire at hospitals, schools, kindergartens and houses. We're not taking this from any media. These are our actual experiences.
->
-> You trust us enough to use our software. We ask that you trust us to say the truth on this. We need your help. Go out and protest this unnecessary war. Stop the bloodshed. Say "stop the war!"
+Ứng dụng quản lý thư viện xây dựng trên **Laminas MVC Skeleton** theo kiến trúc MVC chuẩn. Repo hiện được chuẩn hóa theo module `Library` để tránh lệch schema và lỗi bootstrap.
 
-## Introduction
+## Yêu cầu hệ thống
 
-This is a skeleton application using the Laminas MVC layer and module
-systems. This application is meant to be used as a starting place for those
-looking to get their feet wet with Laminas MVC.
+| Phần mềm | Phiên bản |
+|---|---|
+| PHP | ≥ 8.1 (khuyến nghị 8.2) |
+| PHP extension | `intl` (khuyến nghị bật trong cả CLI và FPM/Apache) |
+| MySQL / MariaDB | ≥ 8.0 |
+| Composer | ≥ 2.x |
 
-## Installation using Composer
+## Khởi động nhanh
 
-The easiest way to create a new Laminas MVC project is to use
-[Composer](https://getcomposer.org/). If you don't have it already installed,
-then please install as per the [documentation](https://getcomposer.org/doc/00-intro.md).
-
-To create your new Laminas MVC project:
-
+### 1. Cài đặt dependencies
 ```bash
-$ composer create-project -sdev laminas/laminas-mvc-skeleton path/to/install
+composer install
 ```
 
-Once installed, you can test it out immediately using PHP's built-in web server:
-
+### 2. Tạo Database
 ```bash
-$ cd path/to/install
-$ php -S 0.0.0.0:8080 -t public
-# OR use the composer alias:
-$ composer serve
+# Sử dụng MySQL CLI
+mysql -u root -p < database.sql
+
+# Hoặc import file database.sql qua phpMyAdmin
 ```
 
-This will start the cli-server on port 8080, and bind it to all network interfaces.
-You can then visit the site at http://localhost:8080/ which will bring up Laminas MVC Skeleton welcome page.
+### 3. Cấu hình Database
+Chỉnh sửa `config/autoload/local.php`:
+```php
+return [
+    'db' => [
+        'hostname' => 'localhost',
+        'database' => 'library_db',
+        'username' => 'root',
+        'password' => 'your_password',
+    ],
+];
+```
 
-**Note:** The built-in CLI server is *for development only*.
+### 4. Chạy ứng dụng
 
-## Development mode
-
-The skeleton ships with [laminas-development-mode](https://github.com/laminas/laminas-development-mode)
-by default, and provides three aliases for consuming the script it ships with:
-
+**Cách 1 — PHP Built-in Server (phát triển):**
 ```bash
-$ composer development-enable  # enable development mode
-$ composer development-disable # disable development mode
-$ composer development-status  # whether or not development mode is enabled
+# Windows XAMPP
+C:\xampp\php\php.exe -S localhost:8000 -t public
+
+# Linux / Mac
+php -S localhost:8000 -t public
 ```
 
-You may provide development-only modules and bootstrap-level configuration in
-`config/development.config.php.dist`, and development-only application
-configuration in `config/autoload/development.local.php.dist`. Enabling
-development mode will copy these files to versions removing the `.dist` suffix,
-while disabling development mode will remove those copies.
-
-Development mode is automatically enabled as part of the skeleton installation process.
-After making changes to one of the above-mentioned `.dist` configuration files you will
-either need to disable then enable development mode for the changes to take effect,
-or manually make matching updates to the `.dist`-less copies of those files.
-
-## Running Unit Tests
-
-To run the supplied skeleton unit tests, you need to do one of the following:
-
-- During initial project creation, select to install the MVC testing support.
-- After initial project creation, install [laminas-test](https://docs.laminas.dev/laminas-test/):
-
-  ```bash
-  $ composer require --dev laminas/laminas-test
-  ```
-
-Once testing support is present, you can run the tests using:
-
-```bash
-$ ./vendor/bin/phpunit
-```
-
-If you need to make local modifications for the PHPUnit test setup, copy
-`phpunit.xml.dist` to `phpunit.xml` and edit the new file; the latter has
-precedence over the former when running tests, and is ignored by version
-control. (If you want to make the modifications permanent, edit the
-`phpunit.xml.dist` file.)
-
-## Running Psalm Static Analysis
-
-To run the supplied skeleton static analysis, you need to do one of the following:
-It is recommended to install the test components from laminas (laminas/laminas-test),
-as this is used in the tests supplied.
-
-  ```bash
-  $ composer require --dev vimeo/psalm psalm/plugin-phpunit laminas/laminas-test
-  ```
-
-Once psalm support is present, you can run the static analysis using:
-
-```bash
-$ composer static-analysis
-```
-
-## Using docker-compose
-
-This skeleton provides a `docker-compose.yml` for use with [docker-compose](https://docs.docker.com/compose/);
-it uses the provided `Dockerfile` to build a docker image for the `laminas` container created with `docker-compose`.
-
-Build and start the image and container using:
-
-```bash
-$ docker-compose up -d --build
-```
-
-At this point, you can visit http://localhost:8080 to see the site running.
-
-You can also run commands such as `composer` in the container.
-The container environment is named "laminas" so you will pass that value to `docker-compose run`:
-
-```bash
-$ docker-compose run laminas composer install
-```
-
-Some composer packages optionally use additional PHP extensions.
-The Dockerfile contains several commented-out commands which enable some of the more popular php extensions.
-For example, to install `pdo-pgsql` support for `laminas/laminas-db` uncomment the lines:
-
-```sh
-# RUN apt-get install --yes libpq-dev \
-#     && docker-php-ext-install pdo_pgsql
-```
-
-then re-run the `docker-compose up -d --build` line as above.
-
-> You may also want to combine the various `apt-get` and `docker-php-ext-*`
-> statements later to reduce the number of layers created by your image.
-
-## Web server setup
-
-### Apache setup
-
-To setup apache, setup a virtual host to point to the public/ directory of the project and you should be ready to go!
-It should look something like below:
-
+**Cách 2 — XAMPP Apache (Virtual Host):**
 ```apache
 <VirtualHost *:80>
-    ServerName laminasapp.localhost
-    DocumentRoot /path/to/laminasapp/public
-    <Directory /path/to/laminasapp/public>
-        DirectoryIndex index.php
+    ServerName library.local
+    DocumentRoot "D:/PHP/public"
+    <Directory "D:/PHP/public">
         AllowOverride All
-        Order allow,deny
-        Allow from all
-        <IfModule mod_authz_core.c>
         Require all granted
-        </IfModule>
     </Directory>
 </VirtualHost>
 ```
 
-### Nginx setup
+Truy cập: `http://localhost:8000/admin/auth`
+Hoặc chỉ cần mở `http://localhost:8000/`, hệ thống sẽ tự chuyển hướng vào màn hình phù hợp.
 
-To setup nginx, open your `/path/to/nginx/nginx.conf` and add an [include directive](http://nginx.org/en/docs/ngx_core_module.html#include) below into `http` block if it does not already exist:
+**Tài khoản mặc định:**
+- Admin: `admin` / `Admin@123`
+- Sinh viên: `student1` / `Admin@123`
 
-```nginx
-http {
-    # ...
-    include sites-enabled/*.conf;
+---
+
+## Cấu trúc Module Library
+
+```
+module/Library/
+├── config/
+│   └── module.config.php      ← Routes + DI factory bindings
+├── src/
+│   ├── Module.php             ← Entry point
+│   ├── Controller/
+│   │   ├── AuthController.php        ← Login/Logout
+│   │   ├── BookController.php        ← CRUD sách
+│   │   ├── DashboardController.php   ← Tổng quan
+│   │   └── TransactionController.php ← Mượn/Trả
+│   ├── Model/
+│   │   ├── Entity/
+│   │   │   ├── Book.php
+│   │   │   ├── User.php
+│   │   │   └── BorrowRecord.php
+│   │   └── Table/
+│   │       ├── BookTable.php         ← Inventory management
+│   │       ├── UserTable.php
+│   │       └── BorrowTable.php       ← JOIN queries, overdue detection
+│   ├── Form/
+│   │   ├── BookForm.php              ← ISBN validation
+│   │   ├── LoginForm.php
+│   │   └── BorrowForm.php            ← Date validation
+│   └── Factory/
+│       ├── Controller/               ← Controller factories
+│       ├── Form/                     ← Form factories (FormElementManager)
+│       └── Table/                    ← TableGateway factories
+└── view/
+    └── library/
+        ├── auth/login.phtml
+        ├── dashboard/index.phtml
+        ├── book/{index,add}.phtml
+        └── transaction/{index,borrow}.phtml
+```
+
+## Cách hệ thống xử lý Dependency Injection
+
+Laminas sử dụng **ServiceManager** để quản lý toàn bộ dependencies:
+
+```
+HTTP Request
+    │
+    ▼
+public/index.php       ← Điểm vào duy nhất
+    │
+    ▼
+ServiceManager         ← Container chứa tất cả services
+    │ inject
+    ▼
+Controller::__construct(BookTable $table)   ← DI qua Constructor
+    │ factory creates
+    ▼
+BookTableFactory       ← Lấy Adapter từ ServiceManager
+    │ inject
+    ▼
+BookTable(TableGateway)← Nhận Adapter, không biết gì về config
+    │ uses
+    ▼
+Laminas\Db\Adapter     ← Đọc từ config/autoload/global.php + local.php
+```
+
+**Tại sao cần Factory?**
+
+```php
+// Cách cũ (khó test, tạo coupling):
+class BookController {
+    public function __construct() {
+        $pdo = new PDO('mysql:...');           // ❌ hardcoded
+        $this->table = new BookTable($pdo);    // ❌ manual creation
+    }
+}
+
+// Laminas DI (có thể mock, testable):
+class BookController {
+    public function __construct(BookTable $table) { // ✅ injected
+        $this->table = $table;
+    }
+}
+
+class BookControllerFactory {
+    public function __invoke(ContainerInterface $c): BookController {
+        return new BookController($c->get(BookTable::class)); // ✅ ServiceManager resolves
+    }
 }
 ```
 
-Create a virtual host configuration file for your project under `/path/to/nginx/sites-enabled/laminasapp.localhost.conf`.
-It should look something like below:
+Ngoài Controller/Table/Service, project hiện cũng đăng ký Form qua `form_elements` để controller không còn `new Form(...)` trực tiếp.
 
-```nginx
-server {
-    listen       80;
-    server_name  laminasapp.localhost;
-    root         /path/to/laminasapp/public;
+## API Routes
 
-    location / {
-        index index.php;
-        try_files $uri $uri/ @php;
-    }
+| URL | Method | Controller | Mô tả |
+|---|---|---|---|
+| `/` | GET | HomeController | Điều hướng tới đăng nhập hoặc dashboard |
+| `/admin` | GET | HomeController | Điều hướng nội bộ của khu quản trị |
+| `/admin/auth/login` | GET/POST | AuthController | Đăng nhập |
+| `/admin/auth/logout` | GET | AuthController | Đăng xuất |
+| `/admin/dashboard` | GET | DashboardController | Tổng quan |
+| `/admin/books` | GET | BookController | Danh sách sách |
+| `/admin/books/add` | GET/POST | BookController | Thêm sách |
+| `/admin/books/edit/:id` | GET/POST | BookController | Sửa sách |
+| `/admin/books/delete/:id` | POST | BookController | Xóa sách |
+| `/admin/borrow` | GET | TransactionController | Danh sách phiếu |
+| `/admin/borrow/borrow` | GET/POST | TransactionController | Lập phiếu mượn |
+| `/admin/borrow/return/:id` | POST | TransactionController | Xác nhận trả |
 
-    location @php {
-        # Pass the PHP requests to FastCGI server (php-fpm) on 127.0.0.1:9000
-        fastcgi_pass   127.0.0.1:9000;
-        fastcgi_param  SCRIPT_FILENAME /path/to/laminasapp/public/index.php;
-        include fastcgi_params;
-    }
-}
-```
+## Ghi chú vận hành
 
-Restart the nginx, now you should be ready to go!
-
-## QA Tools
-
-The skeleton does not come with any QA tooling by default, but does ship with
-configuration for each of:
-
-- [phpcs](https://github.com/squizlabs/php_codesniffer)
-- [laminas-test](https://docs.laminas.dev/laminas-test/)
-- [phpunit](https://phpunit.de)
-
-Additionally, it comes with some basic tests for the shipped
-`Application\Controller\IndexController`.
-
-If you want to add these QA tools, execute the following:
-
-```bash
-$ composer require --dev squizlabs/php_codesniffer laminas/laminas-test
-```
-
-We provide aliases for each of these tools in the Composer configuration:
-
-```bash
-# Run CS checks:
-$ composer cs-check
-# Fix CS errors:
-$ composer cs-fix
-# Run PHPUnit tests:
-$ composer test
-```
+- `Application` đã được tắt khỏi `config/modules.config.php`; phần đang hoạt động và được duy trì là `Library`.
+- Cache config mặc định đã tắt để tránh tình trạng sửa module/config xong nhưng ứng dụng vẫn đọc cấu hình cũ trong `data/cache`.

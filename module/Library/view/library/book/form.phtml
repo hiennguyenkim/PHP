@@ -1,0 +1,122 @@
+<?php
+$isEdit = ($mode === 'edit');
+$title = $isEdit ? 'Cập nhật sách' : 'Thêm sách mới';
+$actionUrl = $isEdit
+    ? $this->url('library/book', ['action' => 'edit', 'id' => $book->id])
+    : $this->url('library/book', ['action' => 'add']);
+$statusValue = $form->get('status')->getValue() === 'unavailable' ? 'unavailable' : 'available';
+
+$this->headTitle($title);
+$this->layout('layout/library-layout');
+?>
+<div class="row justify-content-center">
+<div class="col-xl-8 col-lg-9">
+    <div class="d-flex align-items-center justify-content-between mb-4">
+        <div class="d-flex align-items-center">
+            <a href="<?= $this->url('library/book') ?>" class="btn btn-outline-secondary btn-sm me-3">
+                <i class="bi bi-arrow-left"></i>
+            </a>
+            <div>
+                <h1 class="h4 fw-bold mb-0"><?= $title ?></h1>
+                <p class="text-muted mb-0">Chuẩn hoá thông tin thư mục trước khi xuất bản trong hệ thống.</p>
+            </div>
+        </div>
+    </div>
+
+    <?php if ($isEdit && isset($book) && $book->status === 'borrowed'): ?>
+        <div class="alert alert-info">
+            Sách này hiện hết bản khả dụng. Hệ thống sẽ tự chuyển trạng thái về <strong>đang mượn</strong> khi số lượng còn lại bằng 0.
+        </div>
+    <?php endif; ?>
+
+    <div class="card shadow-sm border-0">
+        <div class="card-body p-4 p-lg-5">
+            <form method="POST" action="<?= $actionUrl ?>">
+                <?= $this->formHidden($form->get('id')) ?>
+
+                <div class="row g-3">
+                    <div class="col-md-8">
+                        <label class="form-label fw-semibold">Nhan đề *</label>
+                        <input type="text" name="title" class="form-control"
+                               value="<?= htmlspecialchars((string) ($form->get('title')->getValue() ?? '')) ?>"
+                               maxlength="255" required>
+                        <?php $messages = $form->get('title')->getMessages(); if ($messages): ?>
+                            <div class="text-danger small mt-1"><?= htmlspecialchars(implode(', ', $messages)) ?></div>
+                        <?php endif; ?>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label fw-semibold">ISBN</label>
+                        <input type="text" name="isbn" class="form-control"
+                               value="<?= htmlspecialchars((string) ($form->get('isbn')->getValue() ?? '')) ?>"
+                               placeholder="978-..."
+                               maxlength="30">
+                        <?php $messages = $form->get('isbn')->getMessages(); if ($messages): ?>
+                            <div class="text-danger small mt-1"><?= htmlspecialchars(implode(', ', $messages)) ?></div>
+                        <?php endif; ?>
+                    </div>
+
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold">Tác giả *</label>
+                        <input type="text" name="author" class="form-control"
+                               value="<?= htmlspecialchars((string) ($form->get('author')->getValue() ?? '')) ?>"
+                               required>
+                        <?php $messages = $form->get('author')->getMessages(); if ($messages): ?>
+                            <div class="text-danger small mt-1"><?= htmlspecialchars(implode(', ', $messages)) ?></div>
+                        <?php endif; ?>
+                    </div>
+
+                    <div class="col-md-3">
+                        <label class="form-label fw-semibold">Thể loại *</label>
+                        <?= $this->formSelect($form->get('category')->setAttribute('class', 'form-select')) ?>
+                        <?php $messages = $form->get('category')->getMessages(); if ($messages): ?>
+                            <div class="text-danger small mt-1"><?= htmlspecialchars(implode(', ', $messages)) ?></div>
+                        <?php endif; ?>
+                    </div>
+
+                    <div class="col-md-3">
+                        <label class="form-label fw-semibold">Bản khả dụng *</label>
+                        <input type="number" name="quantity" class="form-control" min="1" max="999"
+                               value="<?= htmlspecialchars((string) ($form->get('quantity')->getValue() ?: 1)) ?>" required>
+                        <?php $messages = $form->get('quantity')->getMessages(); if ($messages): ?>
+                            <div class="text-danger small mt-1"><?= htmlspecialchars(implode(', ', $messages)) ?></div>
+                        <?php endif; ?>
+                    </div>
+
+                    <div class="col-md-4">
+                        <label class="form-label fw-semibold">Trạng thái vận hành</label>
+                        <select name="status" class="form-select">
+                            <option value="available" <?= $statusValue === 'available' ? 'selected' : '' ?>>Khả dụng</option>
+                            <option value="unavailable" <?= $statusValue === 'unavailable' ? 'selected' : '' ?>>Không khả dụng</option>
+                        </select>
+                        <?php $messages = $form->get('status')->getMessages(); if ($messages): ?>
+                            <div class="text-danger small mt-1"><?= htmlspecialchars(implode(', ', $messages)) ?></div>
+                        <?php endif; ?>
+                    </div>
+
+                    <div class="col-md-8">
+                        <div class="bg-light border rounded-3 h-100 p-3">
+                            <div class="fw-semibold mb-2">Quy tắc kiểm soát lưu thông</div>
+                            <div class="text-muted small">
+                                Trạng thái <strong>đang mượn</strong> được hệ thống tự tính theo số lượng bản còn lại.
+                                Chỉ dùng tuỳ chọn <strong>không khả dụng</strong> khi muốn khóa đầu sách khỏi quy trình mượn trả.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <?= $this->formHidden($form->get('csrf')) ?>
+                <?php $messages = $form->get('csrf')->getMessages(); if ($messages): ?>
+                    <div class="text-danger small mt-3"><?= htmlspecialchars(implode(', ', $messages)) ?></div>
+                <?php endif; ?>
+
+                <div class="d-flex gap-2 mt-4">
+                    <button type="submit" class="btn btn-primary px-4">
+                        <i class="bi bi-save me-1"></i><?= $isEdit ? 'Lưu thay đổi' : 'Tạo đầu sách' ?>
+                    </button>
+                    <a href="<?= $this->url('library/book') ?>" class="btn btn-light">Hủy</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+</div>

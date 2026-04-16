@@ -1,9 +1,6 @@
 /.phpcs-cache
 /.phpunit.cache
 /.psalm-cache
-.env
-Project/config.php
-Project/config.local.php
 vendor/
 config/development.config.php
 data/cache/*

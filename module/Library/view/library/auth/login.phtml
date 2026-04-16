@@ -1,0 +1,36 @@
+<?php $this->headTitle('Đăng nhập'); $this->layout('layout/library-layout'); ?>
+<div class="card login-card p-4 w-100" style="max-width:420px">
+    <div class="text-center mb-4">
+        <div class="fs-1 text-primary"><i class="bi bi-book-half"></i></div>
+        <h1 class="h4 fw-bold">HCMUE Library</h1>
+        <p class="text-muted small">Hệ thống Quản lý Thư viện</p>
+    </div>
+    <form method="POST" action="<?= $this->url('library/auth', ['action' => 'login']) ?>">
+        <div class="mb-3">
+            <label class="form-label fw-semibold">Tên đăng nhập</label>
+            <input type="text" name="username" class="form-control" placeholder="username"
+                   value="<?= htmlspecialchars((string) $form->get('username')->getValue()) ?>" autofocus required>
+            <?php $messages = $form->get('username')->getMessages(); ?>
+            <?php if ($messages): ?>
+                <div class="text-danger small mt-1"><?= htmlspecialchars(implode(', ', $messages)) ?></div>
+            <?php endif; ?>
+        </div>
+        <div class="mb-4">
+            <label class="form-label fw-semibold">Mật khẩu</label>
+            <input type="password" name="password" class="form-control" placeholder="••••••" required>
+            <?php $messages = $form->get('password')->getMessages(); ?>
+            <?php if ($messages): ?>
+                <div class="text-danger small mt-1"><?= htmlspecialchars(implode(', ', $messages)) ?></div>
+            <?php endif; ?>
+        </div>
+        <?= $this->formHidden($form->get('csrf')) ?>
+        <?php $messages = $form->get('csrf')->getMessages(); ?>
+        <?php if ($messages): ?>
+            <div class="text-danger small mb-3"><?= htmlspecialchars(implode(', ', $messages)) ?></div>
+        <?php endif; ?>
+        <button type="submit" class="btn btn-primary w-100 py-2 fw-semibold">
+            <i class="bi bi-box-arrow-in-right me-1"></i>Đăng nhập
+        </button>
+    </form>
+    <p class="text-center text-muted small mt-3 mb-0">Tài khoản mặc định: <code>admin / Admin@123</code></p>
+</div>

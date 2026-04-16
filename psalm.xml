@@ -11,7 +11,7 @@
 >
 
     <projectFiles>
-        <directory name="module" />
+        <directory name="module/Library" />
         <directory name="config" />
 
         <file name="public/index.php" />

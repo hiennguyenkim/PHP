@@ -1,0 +1,98 @@
+<?php
+$isEdit = ($mode === 'edit');
+$title = $isEdit ? 'Cập nhật tài khoản' : 'Tạo tài khoản mới';
+$actionUrl = $isEdit
+    ? $this->url('library/user', ['action' => 'edit', 'id' => $user->id])
+    : $this->url('library/user', ['action' => 'add']);
+
+$this->headTitle($title);
+$this->layout('layout/library-layout');
+?>
+<div class="row justify-content-center">
+<div class="col-xl-7 col-lg-8">
+    <div class="d-flex align-items-center mb-4">
+        <a href="<?= $this->url('library/user') ?>" class="btn btn-outline-secondary btn-sm me-3">
+            <i class="bi bi-arrow-left"></i>
+        </a>
+        <div>
+            <h1 class="h4 fw-bold mb-0"><?= $title ?></h1>
+            <p class="text-muted mb-0">Thiết lập thông tin truy cập và phân quyền cho người dùng thư viện.</p>
+        </div>
+    </div>
+
+    <div class="card shadow-sm border-0">
+        <div class="card-body p-4 p-lg-5">
+            <form method="POST" action="<?= $actionUrl ?>">
+                <?= $this->formHidden($form->get('id')) ?>
+
+                <div class="row g-3">
+                    <div class="col-md-7">
+                        <label class="form-label fw-semibold">Họ và tên *</label>
+                        <input type="text" name="full_name" class="form-control"
+                               value="<?= htmlspecialchars((string) ($form->get('full_name')->getValue() ?? '')) ?>"
+                               maxlength="100" required>
+                        <?php $messages = $form->get('full_name')->getMessages(); if ($messages): ?>
+                            <div class="text-danger small mt-1"><?= htmlspecialchars(implode(', ', $messages)) ?></div>
+                        <?php endif; ?>
+                    </div>
+                    <div class="col-md-5">
+                        <label class="form-label fw-semibold">Vai trò *</label>
+                        <?= $this->formSelect($form->get('role')->setAttribute('class', 'form-select')) ?>
+                        <?php $messages = $form->get('role')->getMessages(); if ($messages): ?>
+                            <div class="text-danger small mt-1"><?= htmlspecialchars(implode(', ', $messages)) ?></div>
+                        <?php endif; ?>
+                    </div>
+
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold">Tên đăng nhập *</label>
+                        <input type="text" name="username" class="form-control"
+                               value="<?= htmlspecialchars((string) ($form->get('username')->getValue() ?? '')) ?>"
+                               maxlength="50" required>
+                        <?php $messages = $form->get('username')->getMessages(); if ($messages): ?>
+                            <div class="text-danger small mt-1"><?= htmlspecialchars(implode(', ', $messages)) ?></div>
+                        <?php endif; ?>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="rounded-3 bg-light border h-100 p-3">
+                            <div class="fw-semibold mb-1">Chính sách an toàn</div>
+                            <div class="text-muted small">
+                                Mật khẩu phải có tối thiểu 8 ký tự. Hãy ưu tiên mật khẩu mạnh và khác với tên đăng nhập.
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold"><?= $isEdit ? 'Mật khẩu mới' : 'Mật khẩu *' ?></label>
+                        <input type="password" name="password" class="form-control" <?= $isEdit ? '' : 'required' ?>>
+                        <?php if ($isEdit): ?>
+                            <div class="form-text">Để trống nếu bạn không muốn thay đổi mật khẩu hiện tại.</div>
+                        <?php endif; ?>
+                        <?php $messages = $form->get('password')->getMessages(); if ($messages): ?>
+                            <div class="text-danger small mt-1"><?= htmlspecialchars(implode(', ', $messages)) ?></div>
+                        <?php endif; ?>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold"><?= $isEdit ? 'Xác nhận mật khẩu mới' : 'Xác nhận mật khẩu *' ?></label>
+                        <input type="password" name="password_confirm" class="form-control" <?= $isEdit ? '' : 'required' ?>>
+                        <?php $messages = $form->get('password_confirm')->getMessages(); if ($messages): ?>
+                            <div class="text-danger small mt-1"><?= htmlspecialchars(implode(', ', $messages)) ?></div>
+                        <?php endif; ?>
+                    </div>
+                </div>
+
+                <?= $this->formHidden($form->get('csrf')) ?>
+                <?php $messages = $form->get('csrf')->getMessages(); if ($messages): ?>
+                    <div class="text-danger small mt-3"><?= htmlspecialchars(implode(', ', $messages)) ?></div>
+                <?php endif; ?>
+
+                <div class="d-flex gap-2 mt-4">
+                    <button type="submit" class="btn btn-primary px-4">
+                        <i class="bi bi-save me-1"></i><?= $isEdit ? 'Lưu thay đổi' : 'Tạo tài khoản' ?>
+                    </button>
+                    <a href="<?= $this->url('library/user') ?>" class="btn btn-light">Hủy</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+</div>

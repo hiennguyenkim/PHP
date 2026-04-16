@@ -1,0 +1,7 @@
+<?php use Application\Core\Session; ?>
+<?php if ($success = Session::flash('success')): ?>
+    <div class="alert alert-success"><?= $success ?></div>
+<?php endif; ?>
+<?php if ($error = Session::flash('error')): ?>
+    <div class="alert alert-error"><?= $error ?></div>
+<?php endif; ?>

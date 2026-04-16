@@ -1,0 +1,115 @@
+<?php
+declare(strict_types=1);
+
+$mode = $mode ?? 'create';
+$form = $form ?? [];
+$errors = $errors ?? [];
+$categories = $categories ?? [];
+$isEdit = $mode === 'edit';
+$backUrl = $this->url('book');
+$actionUrl = $isEdit
+    ? $this->url('book', ['action' => 'edit', 'id' => (int) ($form['id'] ?? 0)])
+    : $this->url('book', ['action' => 'create']);
+?>
+<section class="panel form-panel">
+    <div class="section-head">
+        <div>
+            <p class="eyebrow"><?= $isEdit ? 'Cap nhat dau sach' : 'Them dau sach' ?></p>
+            <h1><?= $isEdit ? 'Chinh sua thong tin sach' : 'Them sach moi vao kho' ?></h1>
+        </div>
+        <a class="text-link" href="<?= $backUrl ?>">Quay lai danh sach sach</a>
+    </div>
+
+    <form method="post" action="<?= $actionUrl ?>" class="form-grid">
+        <div class="form-columns">
+            <label class="field">
+                <span>Ten sach</span>
+                <input type="text" name="title" value="<?= htmlspecialchars((string) ($form['title'] ?? ''), ENT_QUOTES, 'UTF-8') ?>" placeholder="Vi du: Sapiens">
+                <?php if (!empty($errors['title'])): ?>
+                    <small class="field-error"><?= htmlspecialchars((string) $errors['title'], ENT_QUOTES, 'UTF-8') ?></small>
+                <?php endif; ?>
+            </label>
+
+            <label class="field">
+                <span>Tac gia</span>
+                <input type="text" name="author" value="<?= htmlspecialchars((string) ($form['author'] ?? ''), ENT_QUOTES, 'UTF-8') ?>" placeholder="Yuval Noah Harari">
+                <?php if (!empty($errors['author'])): ?>
+                    <small class="field-error"><?= htmlspecialchars((string) $errors['author'], ENT_QUOTES, 'UTF-8') ?></small>
+                <?php endif; ?>
+            </label>
+
+            <label class="field">
+                <span>The loai</span>
+                <input list="category-options" name="category" value="<?= htmlspecialchars((string) ($form['category'] ?? ''), ENT_QUOTES, 'UTF-8') ?>" placeholder="Tieu thuyet, Khoa hoc...">
+                <datalist id="category-options">
+                    <?php foreach ($categories as $category): ?>
+                        <option value="<?= htmlspecialchars($category, ENT_QUOTES, 'UTF-8') ?>">
+                    <?php endforeach; ?>
+                </datalist>
+                <?php if (!empty($errors['category'])): ?>
+                    <small class="field-error"><?= htmlspecialchars((string) $errors['category'], ENT_QUOTES, 'UTF-8') ?></small>
+                <?php endif; ?>
+            </label>
+
+            <label class="field">
+                <span>Nha xuat ban</span>
+                <input type="text" name="publisher" value="<?= htmlspecialchars((string) ($form['publisher'] ?? ''), ENT_QUOTES, 'UTF-8') ?>" placeholder="NXB Tre">
+            </label>
+
+            <label class="field">
+                <span>Nam xuat ban</span>
+                <input type="number" name="published_year" value="<?= htmlspecialchars((string) ($form['published_year'] ?? ''), ENT_QUOTES, 'UTF-8') ?>" placeholder="2024">
+                <?php if (!empty($errors['published_year'])): ?>
+                    <small class="field-error"><?= htmlspecialchars((string) $errors['published_year'], ENT_QUOTES, 'UTF-8') ?></small>
+                <?php endif; ?>
+            </label>
+
+            <label class="field">
+                <span>Ngon ngu</span>
+                <input type="text" name="language" value="<?= htmlspecialchars((string) ($form['language'] ?? 'Tiếng Việt'), ENT_QUOTES, 'UTF-8') ?>" placeholder="Tieng Viet">
+            </label>
+
+            <label class="field">
+                <span>ISBN</span>
+                <input type="text" name="isbn" value="<?= htmlspecialchars((string) ($form['isbn'] ?? ''), ENT_QUOTES, 'UTF-8') ?>" placeholder="978-604-xx">
+                <?php if (!empty($errors['isbn'])): ?>
+                    <small class="field-error"><?= htmlspecialchars((string) $errors['isbn'], ENT_QUOTES, 'UTF-8') ?></small>
+                <?php endif; ?>
+            </label>
+
+            <label class="field">
+                <span>So luong tong</span>
+                <input type="number" name="quantity" value="<?= htmlspecialchars((string) ($form['quantity'] ?? '1'), ENT_QUOTES, 'UTF-8') ?>" min="0">
+                <?php if (!empty($errors['quantity'])): ?>
+                    <small class="field-error"><?= htmlspecialchars((string) $errors['quantity'], ENT_QUOTES, 'UTF-8') ?></small>
+                <?php endif; ?>
+            </label>
+        </div>
+
+        <label class="field">
+            <span>Lien ket anh bia</span>
+            <input type="url" name="cover_image" value="<?= htmlspecialchars((string) ($form['cover_image'] ?? ''), ENT_QUOTES, 'UTF-8') ?>" placeholder="https://...">
+            <?php if (!empty($errors['cover_image'])): ?>
+                <small class="field-error"><?= htmlspecialchars((string) $errors['cover_image'], ENT_QUOTES, 'UTF-8') ?></small>
+            <?php endif; ?>
+        </label>
+
+        <label class="field">
+            <span>Mo ta</span>
+            <textarea name="description" rows="5" placeholder="Tom tat noi dung sach..."><?= htmlspecialchars((string) ($form['description'] ?? ''), ENT_QUOTES, 'UTF-8') ?></textarea>
+        </label>
+
+        <?php if ($isEdit): ?>
+            <div class="info-card">
+                <strong>Thong tin ton kho hien tai</strong>
+                <p>Dang duoc muon: <?= (int) ($form['borrowed_quantity'] ?? 0) ?> ban.</p>
+                <p>Con kha dung: <?= (int) ($form['available_quantity'] ?? 0) ?> ban.</p>
+            </div>
+        <?php endif; ?>
+
+        <div class="form-actions">
+            <button type="submit" class="button button-primary"><?= $isEdit ? 'Luu thay doi' : 'Them sach' ?></button>
+            <a class="button button-secondary" href="<?= $backUrl ?>">Huy</a>
+        </div>
+    </form>
+</section>

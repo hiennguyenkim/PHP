@@ -1,0 +1,44 @@
+<?php
+declare(strict_types=1);
+
+namespace Library\Model\Entity;
+
+class BorrowRecord
+{
+    public int    $id         = 0;
+    public int    $bookId     = 0;
+    public int    $userId     = 0;
+    public string $borrowDate = '';
+    public string $returnDate = '';
+    public string $status     = 'borrowed';
+    public string $createdAt  = '';
+
+    // Joined fields
+    public string $bookTitle  = '';
+    public string $bookIsbn   = '';
+    public string $userFullName = '';
+    public string $username   = '';
+
+    public function exchangeArray(array $data): void
+    {
+        $this->id           = (int)    ($data['id']           ?? 0);
+        $this->bookId       = (int)    ($data['book_id']      ?? 0);
+        $this->userId       = (int)    ($data['user_id']      ?? 0);
+        $this->borrowDate   = (string) ($data['borrow_date']  ?? '');
+        $this->returnDate   = (string) ($data['return_date']  ?? '');
+        $this->status       = (string) ($data['status']       ?? 'borrowed');
+        $this->createdAt    = (string) ($data['created_at']   ?? '');
+        $this->bookTitle    = (string) ($data['book_title']   ?? '');
+        $this->bookIsbn     = (string) ($data['book_isbn']    ?? '');
+        $this->userFullName = (string) ($data['full_name']    ?? '');
+        $this->username     = (string) ($data['username']     ?? '');
+    }
+
+    public function isOverdue(): bool
+    {
+        if ($this->status !== 'borrowed' || $this->returnDate === '') {
+            return false;
+        }
+        return $this->returnDate < date('Y-m-d');
+    }
+}
