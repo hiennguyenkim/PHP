@@ -103,8 +103,12 @@ class BorrowTable
     public function getRecord(int $id): BorrowRecord
     {
         $rowset = $this->tableGateway->select([self::PK => $id]);
-        $row    = $rowset->current();
-        if (! $row instanceof BorrowRecord) {
+        $row    = null;
+        foreach ($rowset as $r) {
+            $row = $r;
+            break;
+        }
+        if (! $row) {
             throw new \RuntimeException(sprintf('Không tìm thấy phiếu mượn ID %d.', $id));
         }
         return $row;
