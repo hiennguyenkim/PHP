@@ -10,6 +10,8 @@ use Laminas\Db\TableGateway\TableGateway;
 
 class UserTable
 {
+    private const PK = 'user_id';
+
     private TableGateway $tableGateway;
 
     public function __construct(TableGateway $tableGateway)
@@ -24,9 +26,17 @@ class UserTable
         return ($row instanceof User) ? $row : null;
     }
 
+    public function getByEmail(string $email): ?User
+    {
+        $rowset = $this->tableGateway->select(['email' => $email]);
+        $row    = $rowset->current();
+
+        return ($row instanceof User) ? $row : null;
+    }
+
     public function getUser(int $id): User
     {
-        $rowset = $this->tableGateway->select(['id' => $id]);
+        $rowset = $this->tableGateway->select([self::PK => $id]);
         $row    = $rowset->current();
 
         if (! $row instanceof User) {
@@ -45,6 +55,8 @@ class UserTable
                     ->like('full_name', $search)
                     ->or
                     ->like('username', $search)
+                    ->or
+                    ->like('email', $search)
                     ->unnest();
             }
 
@@ -55,7 +67,7 @@ class UserTable
             $select->order([
                 new Expression("CASE WHEN role = 'admin' THEN 0 ELSE 1 END"),
                 'full_name ASC',
-                'id DESC',
+                self::PK . ' DESC',
             ]);
         });
     }
@@ -90,11 +102,27 @@ class UserTable
     public function usernameExists(string $username, ?int $excludeId = null): bool
     {
         $rowset = $this->tableGateway->select(function (Select $select) use ($username, $excludeId): void {
-            $select->columns(['id']);
+            $select->columns([self::PK]);
             $select->where(['username' => $username]);
 
             if ($excludeId !== null) {
-                $select->where->notEqualTo('id', $excludeId);
+                $select->where->notEqualTo(self::PK, $excludeId);
+            }
+
+            $select->limit(1);
+        });
+
+        return $rowset->count() > 0;
+    }
+
+    public function emailExists(string $email, ?int $excludeId = null): bool
+    {
+        $rowset = $this->tableGateway->select(function (Select $select) use ($email, $excludeId): void {
+            $select->columns([self::PK]);
+            $select->where(['email' => $email]);
+
+            if ($excludeId !== null) {
+                $select->where->notEqualTo(self::PK, $excludeId);
             }
 
             $select->limit(1);
@@ -107,6 +135,7 @@ class UserTable
     {
         $data = [
             'username'  => $user->username,
+            'email'     => $user->email,
             'full_name' => $user->fullName,
             'role'      => $user->role,
         ];
@@ -127,7 +156,7 @@ class UserTable
             return;
         }
 
-        $this->tableGateway->update($data, ['id' => $user->id]);
+        $this->tableGateway->update($data, [self::PK => $user->id]);
 
         if ($passwordHash !== null) {
             $user->password = $passwordHash;

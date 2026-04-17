@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace LibraryTest\Controller;
 
 use Library\Controller\HomeController;
+use Library\Session\AuthSessionContainer;
 use Laminas\Test\PHPUnit\Controller\AbstractHttpControllerTestCase;
 
 class HomeControllerTest extends AbstractHttpControllerTestCase
@@ -18,16 +19,40 @@ class HomeControllerTest extends AbstractHttpControllerTestCase
         $this->setApplicationConfig($config);
 
         parent::setUp();
+
+        /** @var AuthSessionContainer $authSession */
+        $authSession = $this->getApplicationServiceLocator()->get(AuthSessionContainer::class);
+        unset($authSession->user);
     }
 
-    public function testRootRedirectsToLogin(): void
+    public function testRootRedirectsToCatalog(): void
     {
         $this->dispatch('/', 'GET');
 
         $this->assertResponseStatusCode(302);
         $this->assertControllerName(HomeController::class);
         $this->assertMatchedRouteName('home');
-        $this->assertRedirectTo('/admin/auth');
+        $this->assertRedirectTo('/books');
+    }
+
+    public function testRootRedirectsAuthenticatedAdminToAdminBooks(): void
+    {
+        $this->mockLoginAsRole('admin');
+
+        $this->dispatch('/', 'GET');
+
+        $this->assertResponseStatusCode(302);
+        $this->assertRedirectTo('/admin/books');
+    }
+
+    public function testRootRedirectsAuthenticatedStudentToCatalog(): void
+    {
+        $this->mockLoginAsRole('student');
+
+        $this->dispatch('/', 'GET');
+
+        $this->assertResponseStatusCode(302);
+        $this->assertRedirectTo('/books');
     }
 
     public function testAdminEntryRedirectsToLogin(): void
@@ -40,10 +65,31 @@ class HomeControllerTest extends AbstractHttpControllerTestCase
         $this->assertRedirectTo('/admin/auth');
     }
 
+    public function testBooksIndexRequiresLogin(): void
+    {
+        $this->dispatch('/admin/books', 'GET');
+
+        $this->assertResponseStatusCode(302);
+        $this->assertRedirectTo('/admin/auth');
+    }
+
     public function testInvalidRouteDoesNotCrash(): void
     {
         $this->dispatch('/khong-ton-tai', 'GET');
 
         $this->assertResponseStatusCode(404);
+    }
+
+    private function mockLoginAsRole(string $role): void
+    {
+        /** @var AuthSessionContainer $authSession */
+        $authSession = $this->getApplicationServiceLocator()->get(AuthSessionContainer::class);
+        $authSession->user = [
+            'id' => $role === 'admin' ? 1 : 2,
+            'username' => $role === 'admin' ? 'admin' : 'student1',
+            'email' => $role === 'admin' ? 'admin@library.local' : 'student1@library.local',
+            'full_name' => $role === 'admin' ? 'Quản trị viên' : 'Nguyễn Văn An',
+            'role' => $role,
+        ];
     }
 }

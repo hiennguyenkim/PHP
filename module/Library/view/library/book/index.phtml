@@ -1,6 +1,36 @@
 <?php
-$this->headTitle($isAdmin ? 'Quản lý sách' : 'Danh mục sách');
+$canManage = (bool) ($canManage ?? false);
+$canBorrow = (bool) ($canBorrow ?? false);
+$isGuest = (bool) ($isGuest ?? false);
+$indexRoute = (string) ($indexRoute ?? 'library/book');
+$this->headTitle($canManage ? 'Quản lý sách' : 'Danh mục sách');
 $this->layout('layout/library-layout');
+$pagination = is_array($pagination ?? null) ? $pagination : [];
+$page = (int) ($pagination['page'] ?? 1);
+$perPage = (int) ($pagination['perPage'] ?? 10);
+$totalItems = (int) ($pagination['totalItems'] ?? 0);
+$totalPages = (int) ($pagination['totalPages'] ?? 1);
+$fromItem = $totalItems === 0 ? 0 : (($page - 1) * $perPage + 1);
+$toItem = $totalItems === 0 ? 0 : min($page * $perPage, $totalItems);
+
+$queryBase = [
+    'search' => (string) ($filters['search'] ?? ''),
+    'category' => (string) ($filters['category'] ?? ''),
+    'status' => (string) ($filters['status'] ?? ''),
+];
+
+$buildPageUrl = function (int $targetPage) use ($queryBase, $indexRoute): string {
+    $query = $queryBase;
+    $query['page'] = $targetPage;
+    $query = array_filter(
+        $query,
+        static fn($value, $key): bool => $key === 'page' || $value !== '',
+        ARRAY_FILTER_USE_BOTH
+    );
+
+    return $this->url($indexRoute, [], ['query' => $query]);
+};
+
 $statusMap = [
     'available' => ['Sẵn sàng', 'success'],
     'borrowed' => ['Đang mượn hết', 'warning'],
@@ -9,12 +39,18 @@ $statusMap = [
 ?>
 <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
     <div>
-        <h1 class="h3 fw-bold mb-0"><i class="bi bi-journals me-2 text-primary"></i><?= $isAdmin ? 'Quản lý sách' : 'Danh mục sách' ?></h1>
-        <p class="text-muted mb-0"><?= $isAdmin ? 'Kiểm soát biên mục, trạng thái lưu thông và bản khả dụng.' : 'Tra cứu nhanh các đầu sách hiện có trong thư viện.' ?></p>
+        <h1 class="h3 fw-bold mb-0"><i class="bi bi-journals me-2 text-primary"></i><?= $canManage ? 'Quản lý sách' : 'Danh mục sách' ?></h1>
+        <p class="text-muted mb-0">
+            <?= $canManage ? 'Quản lý kho sách, biên mục và tình trạng mượn trả.' : 'Tra cứu sách hiện có của thư viện và thực hiện mượn theo tài khoản.' ?>
+        </p>
     </div>
-    <?php if ($isAdmin): ?>
+    <?php if ($canManage): ?>
         <a href="<?= $this->url('library/book', ['action' => 'add']) ?>" class="btn btn-primary">
             <i class="bi bi-plus-circle me-1"></i>Thêm sách mới
+        </a>
+    <?php elseif ($canBorrow): ?>
+        <a href="<?= $this->url('library/transaction', ['action' => 'borrow']) ?>" class="btn btn-success">
+            <i class="bi bi-bookmark-plus me-1"></i>Mượn sách
         </a>
     <?php endif; ?>
 </div>
@@ -86,7 +122,7 @@ $statusMap = [
                 <button type="submit" class="btn btn-primary w-100">
                     <i class="bi bi-search me-1"></i>Lọc
                 </button>
-                <a href="<?= $this->url('library/book') ?>" class="btn btn-light">Đặt lại</a>
+                <a href="<?= $this->url($indexRoute) ?>" class="btn btn-light">Đặt lại</a>
             </div>
         </form>
     </div>
@@ -98,7 +134,7 @@ $statusMap = [
             <table class="table table-hover align-middle mb-0">
                 <thead class="table-light">
                     <tr>
-                        <th style="width: 70px;">#</th>
+                        <th style="width: 90px;">STT</th>
                         <th>Tên sách</th>
                         <th>Tác giả</th>
                         <th>ISBN</th>
@@ -116,12 +152,16 @@ $statusMap = [
                         </td>
                     </tr>
                 <?php else: ?>
+                    <?php $rowNumber = $fromItem; ?>
                     <?php foreach ($books as $book): ?>
                         <?php [$statusLabel, $statusClass] = $statusMap[$book->status] ?? [$book->status, 'secondary']; ?>
                         <tr>
-                            <td class="text-muted"><?= (int) $book->id ?></td>
+                            <td class="text-muted"><?= $rowNumber ?></td>
                             <td>
                                 <div class="fw-semibold"><?= htmlspecialchars($book->title) ?></div>
+                                <?php if ($canManage): ?>
+                                    <small class="text-muted">Mã sách: #<?= (int) $book->id ?></small>
+                                <?php endif; ?>
                             </td>
                             <td><?= htmlspecialchars($book->author) ?></td>
                             <td><code><?= htmlspecialchars($book->isbn !== '' ? $book->isbn : '—') ?></code></td>
@@ -129,7 +169,7 @@ $statusMap = [
                             <td><?= (int) $book->quantity ?></td>
                             <td><span class="badge bg-<?= $statusClass ?>"><?= $statusLabel ?></span></td>
                             <td>
-                                <?php if ($isAdmin): ?>
+                                <?php if ($canManage): ?>
                                     <div class="d-flex gap-2">
                                         <a href="<?= $this->url('library/book', ['action' => 'edit', 'id' => $book->id]) ?>"
                                            class="btn btn-sm btn-outline-primary">
@@ -144,15 +184,51 @@ $statusMap = [
                                             </button>
                                         </form>
                                     </div>
+                                <?php elseif ($canBorrow): ?>
+                                    <?php if ((int) $book->quantity > 0 && $book->status === 'available'): ?>
+                                        <a href="<?= $this->url('library/transaction', ['action' => 'borrow'], ['query' => ['book_id' => (int) $book->id]]) ?>"
+                                           class="btn btn-sm btn-outline-success">
+                                            <i class="bi bi-bookmark-plus"></i>
+                                        </a>
+                                    <?php else: ?>
+                                        <span class="text-muted small">Tạm hết sách</span>
+                                    <?php endif; ?>
+                                <?php elseif ($isGuest): ?>
+                                    <span class="text-muted small">Đăng nhập để mượn</span>
                                 <?php else: ?>
                                     <span class="text-muted small">Chỉ xem</span>
                                 <?php endif; ?>
                             </td>
                         </tr>
+                        <?php $rowNumber++; ?>
                     <?php endforeach; ?>
                 <?php endif; ?>
                 </tbody>
             </table>
         </div>
     </div>
+</div>
+
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mt-3">
+    <div class="text-muted small">
+        Hiển thị <?= $fromItem ?> - <?= $toItem ?> trên tổng <?= $totalItems ?> cuốn.
+    </div>
+
+    <?php if ($totalPages > 1): ?>
+        <nav aria-label="Phân trang sách">
+            <ul class="pagination pagination-sm mb-0">
+                <li class="page-item <?= $page <= 1 ? 'disabled' : '' ?>">
+                    <a class="page-link" href="<?= $page <= 1 ? '#' : $buildPageUrl($page - 1) ?>">Trước</a>
+                </li>
+                <?php for ($p = 1; $p <= $totalPages; $p++): ?>
+                    <li class="page-item <?= $p === $page ? 'active' : '' ?>">
+                        <a class="page-link" href="<?= $buildPageUrl($p) ?>"><?= $p ?></a>
+                    </li>
+                <?php endfor; ?>
+                <li class="page-item <?= $page >= $totalPages ? 'disabled' : '' ?>">
+                    <a class="page-link" href="<?= $page >= $totalPages ? '#' : $buildPageUrl($page + 1) ?>">Sau</a>
+                </li>
+            </ul>
+        </nav>
+    <?php endif; ?>
 </div>

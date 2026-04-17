@@ -4,12 +4,15 @@ declare(strict_types=1);
 namespace Library\Model\Table;
 
 use Library\Model\Entity\Book;
-use Laminas\Db\TableGateway\TableGateway;
+use Laminas\Db\Sql\Expression;
 use Laminas\Db\Sql\Select;
+use Laminas\Db\TableGateway\TableGateway;
 use RuntimeException;
 
 class BookTable
 {
+    private const PK = 'book_id';
+
     private TableGateway $tableGateway;
 
     public function __construct(TableGateway $tableGateway)
@@ -20,35 +23,41 @@ class BookTable
     public function fetchAll(array $filters = []): \Laminas\Db\ResultSet\ResultSetInterface
     {
         return $this->tableGateway->select(function (Select $select) use ($filters): void {
-            if (($filters['search'] ?? '') !== '') {
-                $search = '%' . $filters['search'] . '%';
-                $select->where->nest
-                    ->like('title', $search)
-                    ->or
-                    ->like('author', $search)
-                    ->or
-                    ->like('isbn', $search)
-                    ->unnest();
-            }
-
-            if (($filters['category'] ?? '') !== '') {
-                $select->where(['category' => $filters['category']]);
-            }
-
-            if (($filters['status'] ?? '') !== '') {
-                $select->where(['status' => $filters['status']]);
-            }
-
-            $select->order([
-                new \Laminas\Db\Sql\Expression("CASE WHEN status = 'available' THEN 0 WHEN status = 'borrowed' THEN 1 ELSE 2 END"),
-                'title ASC',
-            ]);
+            $this->applyFilters($select, $filters);
+            $select->order(self::PK . ' ASC');
         });
+    }
+
+    public function fetchPage(array $filters, int $page, int $perPage): \Laminas\Db\ResultSet\ResultSetInterface
+    {
+        $safePage = max(1, $page);
+        $safePerPage = max(1, $perPage);
+        $offset = ($safePage - 1) * $safePerPage;
+
+        return $this->tableGateway->select(function (Select $select) use ($filters, $safePerPage, $offset): void {
+            $this->applyFilters($select, $filters);
+            $select->order(self::PK . ' ASC');
+            $select->limit($safePerPage);
+            $select->offset($offset);
+        });
+    }
+
+    public function countFiltered(array $filters = []): int
+    {
+        $sql = $this->tableGateway->getSql();
+        $select = $sql->select();
+        $select->columns(['c' => new Expression('COUNT(*)')]);
+        $this->applyFilters($select, $filters);
+
+        $stmt = $sql->prepareStatementForSqlObject($select);
+        $result = $stmt->execute();
+
+        return (int) ($result->current()['c'] ?? 0);
     }
 
     public function getBook(int $id): Book
     {
-        $rowset = $this->tableGateway->select(['id' => $id]);
+        $rowset = $this->tableGateway->select([self::PK => $id]);
         $row    = $rowset->current();
         if (! $row instanceof Book) {
             throw new RuntimeException(sprintf('Không tìm thấy sách có ID %d.', $id));
@@ -76,13 +85,13 @@ class BookTable
         if ($book->id === 0) {
             $this->tableGateway->insert($data);
         } else {
-            $this->tableGateway->update($data, ['id' => $book->id]);
+            $this->tableGateway->update($data, [self::PK => $book->id]);
         }
     }
 
     public function deleteBook(int $id): void
     {
-        $this->tableGateway->delete(['id' => $id]);
+        $this->tableGateway->delete([self::PK => $id]);
     }
 
     public function countAll(): int
@@ -150,7 +159,7 @@ class BookTable
         $newQty = $book->quantity - 1;
         $this->tableGateway->update(
             ['quantity' => $newQty, 'status' => $this->resolveAvailabilityStatus($newQty)],
-            ['id' => $bookId]
+            [self::PK => $bookId]
         );
     }
 
@@ -164,12 +173,34 @@ class BookTable
 
         $this->tableGateway->update(
             ['quantity' => $newQty, 'status' => $status],
-            ['id' => $bookId]
+            [self::PK => $bookId]
         );
     }
 
     private function resolveAvailabilityStatus(int $quantity): string
     {
         return $quantity > 0 ? 'available' : 'borrowed';
+    }
+
+    private function applyFilters(Select $select, array $filters): void
+    {
+        if (($filters['search'] ?? '') !== '') {
+            $search = '%' . $filters['search'] . '%';
+            $select->where->nest
+                ->like('title', $search)
+                ->or
+                ->like('author', $search)
+                ->or
+                ->like('isbn', $search)
+                ->unnest();
+        }
+
+        if (($filters['category'] ?? '') !== '') {
+            $select->where(['category' => $filters['category']]);
+        }
+
+        if (($filters['status'] ?? '') !== '') {
+            $select->where(['status' => $filters['status']]);
+        }
     }
 }

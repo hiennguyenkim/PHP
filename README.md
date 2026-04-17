@@ -21,7 +21,7 @@ composer install
 ### 2. Tạo Database
 ```bash
 # Sử dụng MySQL CLI
-mysql -u root -p < database.sql
+mysql --default-character-set=utf8mb4 -u root -p < database.sql
 
 # Hoặc import file database.sql qua phpMyAdmin
 ```
@@ -35,9 +35,33 @@ return [
         'database' => 'library_db',
         'username' => 'root',
         'password' => 'your_password',
+        'charset'  => 'utf8mb4',
+        'collation'=> 'utf8mb4_unicode_ci',
     ],
 ];
 ```
+
+### Sửa lỗi font tiếng Việt (nếu dữ liệu đã bị lỗi)
+Nếu dữ liệu đang hiển thị kiểu `Nguyá»…n` thay vì `Nguyễn`, chạy script sửa encoding:
+```bash
+mysql --default-character-set=utf8mb4 -u root -p < database_fix_encoding.sql
+```
+
+### Đồng bộ DB theo kịch bản MVC (users có email)
+Nếu bạn đang nâng cấp từ DB cũ, chạy thêm:
+```bash
+mysql --default-character-set=utf8mb4 -u root -p < database_align_scenario.sql
+```
+
+### Migrate khóa chính theo nghiệp vụ (khuyến nghị cho DB cũ)
+Nếu DB cũ còn dùng cột `id`, chạy thêm:
+```bash
+mysql --default-character-set=utf8mb4 -u root -p < database_migrate_primary_keys.sql
+```
+Sau migration:
+- `users.user_id` là khóa chính.
+- `books.book_id` là khóa chính.
+- `borrow_records.borrow_id` là khóa chính.
 
 ### 4. Chạy ứng dụng
 
@@ -62,12 +86,13 @@ php -S localhost:8000 -t public
 </VirtualHost>
 ```
 
-Truy cập: `http://localhost:8000/admin/auth`
-Hoặc chỉ cần mở `http://localhost:8000/`, hệ thống sẽ tự chuyển hướng vào màn hình phù hợp.
+Truy cập: `http://localhost:8000/`
+Mặc định hệ thống sẽ chuyển hướng về trang danh mục công khai: `http://localhost:8000/books`
+Trang này hiển thị danh sách sách trước khi đăng nhập, nút `Đăng nhập` nằm ở góc trên bên phải.
 
 **Tài khoản mặc định:**
 - Admin: `admin` / `Admin@123`
-- Sinh viên: `student1` / `Admin@123`
+- Sinh viên: `student1` ... `student10` / `Admin@123`
 
 ---
 
@@ -166,18 +191,26 @@ Ngoài Controller/Table/Service, project hiện cũng đăng ký Form qua `form_
 
 | URL | Method | Controller | Mô tả |
 |---|---|---|---|
-| `/` | GET | HomeController | Điều hướng tới đăng nhập hoặc dashboard |
-| `/admin` | GET | HomeController | Điều hướng nội bộ của khu quản trị |
+| `/` | GET | HomeController | Điều hướng đến `/books` (catalog công khai) |
+| `/books` | GET | BookController | Danh mục sách công khai (guest xem được, góc phải có nút đăng nhập) |
+| `/admin` | GET | HomeController | Entry nội bộ khu quản trị (guest sẽ chuyển sang đăng nhập) |
 | `/admin/auth/login` | GET/POST | AuthController | Đăng nhập |
+| `/admin/auth/register` | GET/POST | AuthController | Đăng ký |
 | `/admin/auth/logout` | GET | AuthController | Đăng xuất |
 | `/admin/dashboard` | GET | DashboardController | Tổng quan |
-| `/admin/books` | GET | BookController | Danh sách sách |
-| `/admin/books/add` | GET/POST | BookController | Thêm sách |
-| `/admin/books/edit/:id` | GET/POST | BookController | Sửa sách |
-| `/admin/books/delete/:id` | POST | BookController | Xóa sách |
-| `/admin/borrow` | GET | TransactionController | Danh sách phiếu |
-| `/admin/borrow/borrow` | GET/POST | TransactionController | Lập phiếu mượn |
-| `/admin/borrow/return/:id` | POST | TransactionController | Xác nhận trả |
+| `/admin/books` | GET | BookController | Danh mục/Quản lý sách trong khu đăng nhập |
+| `/admin/books/add` | GET/POST | BookController | Thêm sách (admin) |
+| `/admin/books/edit/:id` | GET/POST | BookController | Sửa sách (admin) |
+| `/admin/books/delete/:id` | POST | BookController | Xóa sách (admin) |
+| `/admin/borrow` | GET | TransactionController | Danh sách phiếu mượn/trả |
+| `/admin/borrow/borrow` | GET/POST | TransactionController | Lập phiếu mượn (admin hoặc sinh viên cho chính mình) |
+| `/admin/borrow/return/:id` | POST | TransactionController | Xác nhận trả (admin) |
+
+## Phân quyền nghiệp vụ
+
+- `Guest`: chỉ xem danh mục `/books`, không được mượn/sửa/xóa.
+- `Student`: xem danh mục, mượn sách cho chính tài khoản của mình, xem phiếu mượn cá nhân.
+- `Admin`: toàn quyền quản lý sách, người dùng, mượn/trả cho sinh viên.
 
 ## Ghi chú vận hành
 

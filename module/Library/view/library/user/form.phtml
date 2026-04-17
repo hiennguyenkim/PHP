@@ -53,6 +53,15 @@ $this->layout('layout/library-layout');
                         <?php endif; ?>
                     </div>
                     <div class="col-md-6">
+                        <label class="form-label fw-semibold">Email *</label>
+                        <input type="email" name="email" class="form-control"
+                               value="<?= htmlspecialchars((string) ($form->get('email')->getValue() ?? '')) ?>"
+                               maxlength="100" required>
+                        <?php $messages = $form->get('email')->getMessages(); if ($messages): ?>
+                            <div class="text-danger small mt-1"><?= htmlspecialchars(implode(', ', $messages)) ?></div>
+                        <?php endif; ?>
+                    </div>
+                    <div class="col-md-12">
                         <div class="rounded-3 bg-light border h-100 p-3">
                             <div class="fw-semibold mb-1">Chính sách an toàn</div>
                             <div class="text-muted small">

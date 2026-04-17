@@ -7,6 +7,7 @@ class User
 {
     public int    $id        = 0;
     public string $username  = '';
+    public string $email     = '';
     public string $password  = '';
     public string $fullName  = '';
     public string $role      = 'student';
@@ -14,8 +15,9 @@ class User
 
     public function exchangeArray(array $data): void
     {
-        $this->id        = (int)    ($data['id']         ?? 0);
+        $this->id        = (int)    ($data['id'] ?? $data['user_id'] ?? 0);
         $this->username  = (string) ($data['username']   ?? '');
+        $this->email     = (string) ($data['email']      ?? '');
         $this->password  = (string) ($data['password']   ?? '');
         $this->fullName  = (string) ($data['full_name']  ?? '');
         $this->role      = (string) ($data['role']       ?? 'student');
@@ -32,6 +34,7 @@ class User
         return [
             'id'        => $this->id,
             'username'  => $this->username,
+            'email'     => $this->email,
             'full_name' => $this->fullName,
             'role'      => $this->role,
         ];

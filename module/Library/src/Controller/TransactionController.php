@@ -63,9 +63,13 @@ class TransactionController extends BaseController
 
     public function borrowAction()
     {
-        if ($response = $this->requireAdmin()) {
+        if ($response = $this->requireLogin()) {
             return $response;
         }
+
+        $isAdmin = $this->isAdmin();
+        $currentUser = $this->currentUser() ?? [];
+        $currentUserId = (int) ($currentUser['id'] ?? 0);
 
         // Build dropdown options
         $bookOptions = [];
@@ -78,13 +82,18 @@ class TransactionController extends BaseController
                 $bookOptions[$book->id] = $book->title . ' (còn ' . $book->quantity . ')';
             }
         }
-        $userOptions = [];
-        foreach ($this->userTable->fetchStudentOptions() as $user) {
-            if (! $user instanceof User) {
-                continue;
-            }
 
-            $userOptions[$user->id] = $user->fullName . ' (@' . $user->username . ')';
+        $userOptions = [];
+        if ($isAdmin) {
+            foreach ($this->userTable->fetchStudentOptions() as $user) {
+                if (! $user instanceof User) {
+                    continue;
+                }
+
+                $userOptions[$user->id] = $user->fullName . ' (@' . $user->username . ')';
+            }
+        } elseif ($currentUserId > 0) {
+            $userOptions[$currentUserId] = ((string) ($currentUser['full_name'] ?? 'Sinh viên')) . ' (@' . ((string) ($currentUser['username'] ?? 'student')) . ')';
         }
 
         $form = $this->formElementManager->get(BorrowForm::class);
@@ -93,20 +102,31 @@ class TransactionController extends BaseController
         }
         $form->setSelectionOptions($bookOptions, $userOptions);
 
+        $prefillBookId = (int) $this->queryString('book_id');
+
         if ($this->httpRequest()->isPost()) {
-            $form->setData($this->postData());
+            $postData = $this->postData();
+            if (! $isAdmin) {
+                $postData['user_id'] = (string) $currentUserId;
+            }
+
+            $form->setData($postData);
             if ($form->isValid()) {
                 /** @var array{book_id:string|int, user_id:string|int, borrow_date:string, return_date:string} $data */
                 $data   = $form->getData();
                 $bookId = (int) $data['book_id'];
-                $userId = (int) $data['user_id'];
+                $userId = $isAdmin ? (int) $data['user_id'] : $currentUserId;
 
                 if ($data['return_date'] < $data['borrow_date']) {
                     $form->get('return_date')->setMessages([
                         'Hạn trả phải sau hoặc bằng ngày mượn.',
                     ]);
 
-                    return new ViewModel(['form' => $form]);
+                    return new ViewModel([
+                        'form' => $form,
+                        'isAdmin' => $isAdmin,
+                        'currentUser' => $currentUser,
+                    ]);
                 }
 
                 try {
@@ -122,9 +142,21 @@ class TransactionController extends BaseController
                     $this->flash()->addErrorMessage($e->getMessage());
                 }
             }
+        } else {
+            if ($prefillBookId > 0 && array_key_exists($prefillBookId, $bookOptions)) {
+                $form->get('book_id')->setValue((string) $prefillBookId);
+            }
+
+            if (! $isAdmin && $currentUserId > 0) {
+                $form->get('user_id')->setValue((string) $currentUserId);
+            }
         }
 
-        return new ViewModel(['form' => $form]);
+        return new ViewModel([
+            'form' => $form,
+            'isAdmin' => $isAdmin,
+            'currentUser' => $currentUser,
+        ]);
     }
 
     public function returnAction()

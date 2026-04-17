@@ -21,7 +21,7 @@ class BorrowRecord
 
     public function exchangeArray(array $data): void
     {
-        $this->id           = (int)    ($data['id']           ?? 0);
+        $this->id           = (int)    ($data['id'] ?? $data['borrow_id'] ?? 0);
         $this->bookId       = (int)    ($data['book_id']      ?? 0);
         $this->userId       = (int)    ($data['user_id']      ?? 0);
         $this->borrowDate   = (string) ($data['borrow_date']  ?? '');

@@ -5,8 +5,12 @@
  */
 return [
     'db' => [
-        'driver'  => 'Pdo_Mysql',
-        'charset' => 'utf8mb4',
+        'driver'     => 'Pdo_Mysql',
+        'charset'    => 'utf8mb4',
+        'collation'  => 'utf8mb4_unicode_ci',
+        'driver_options' => [
+            \PDO::MYSQL_ATTR_INIT_COMMAND => 'SET NAMES utf8mb4 COLLATE utf8mb4_unicode_ci',
+        ],
     ],
 
     'service_manager' => [

@@ -1,7 +1,11 @@
-<?php $this->headTitle('Lập phiếu mượn'); $this->layout('layout/library-layout'); ?>
+<?php
+$this->headTitle($isAdmin ? 'Lập phiếu mượn' : 'Mượn sách');
+$this->layout('layout/library-layout');
+?>
 <?php
 $bookOptions = $form->get('book_id')->getValueOptions();
 $userOptions = $form->get('user_id')->getValueOptions();
+$currentUserLabel = htmlspecialchars((string) (($currentUser['full_name'] ?? '') !== '' ? $currentUser['full_name'] : ($currentUser['username'] ?? '')));
 ?>
 <div class="row justify-content-center">
 <div class="col-lg-6">
@@ -9,7 +13,7 @@ $userOptions = $form->get('user_id')->getValueOptions();
         <a href="<?= $this->url('library/transaction') ?>" class="btn btn-outline-secondary btn-sm me-3">
             <i class="bi bi-arrow-left"></i>
         </a>
-        <h1 class="h4 fw-bold mb-0">Lập phiếu mượn sách</h1>
+        <h1 class="h4 fw-bold mb-0"><?= $isAdmin ? 'Lập phiếu mượn sách' : 'Mượn sách' ?></h1>
     </div>
 
     <div class="card">
@@ -17,12 +21,12 @@ $userOptions = $form->get('user_id')->getValueOptions();
             <form method="POST" action="<?= $this->url('library/transaction', ['action' => 'borrow']) ?>">
                 <?php if ($bookOptions === []): ?>
                     <div class="alert alert-warning">
-                        Hiện chưa có sách khả dụng để lập phiếu mượn.
+                        Hiện chưa có sách khả dụng để mượn.
                     </div>
                 <?php endif; ?>
                 <?php if ($userOptions === []): ?>
                     <div class="alert alert-warning">
-                        Hiện chưa có tài khoản sinh viên nào trong hệ thống.
+                        Không tìm thấy thông tin người mượn phù hợp.
                     </div>
                 <?php endif; ?>
 
@@ -34,13 +38,21 @@ $userOptions = $form->get('user_id')->getValueOptions();
                     <?php endif; ?>
                 </div>
 
-                <div class="mb-3">
-                    <label class="form-label fw-semibold">Sinh viên *</label>
-                    <?= $this->formSelect($form->get('user_id')->setAttribute('class', 'form-select')) ?>
-                    <?php $msgs = $form->get('user_id')->getMessages(); if ($msgs): ?>
-                        <div class="text-danger small mt-1"><?= htmlspecialchars(implode(', ', $msgs)) ?></div>
-                    <?php endif; ?>
-                </div>
+                <?php if ($isAdmin): ?>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Sinh viên *</label>
+                        <?= $this->formSelect($form->get('user_id')->setAttribute('class', 'form-select')) ?>
+                        <?php $msgs = $form->get('user_id')->getMessages(); if ($msgs): ?>
+                            <div class="text-danger small mt-1"><?= htmlspecialchars(implode(', ', $msgs)) ?></div>
+                        <?php endif; ?>
+                    </div>
+                <?php else: ?>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Người mượn</label>
+                        <input type="text" class="form-control" value="<?= $currentUserLabel ?>" disabled>
+                        <input type="hidden" name="user_id" value="<?= (int) ($currentUser['id'] ?? 0) ?>">
+                    </div>
+                <?php endif; ?>
 
                 <div class="row g-3 mb-4">
                     <div class="col">

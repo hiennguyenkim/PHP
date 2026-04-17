@@ -19,6 +19,8 @@ use RuntimeException;
  */
 class BookController extends BaseController
 {
+    private const PER_PAGE = 10;
+
     public function __construct(
         AuthSessionContainer $authSessionContainer,
         private BookTable $bookTable,
@@ -30,22 +32,53 @@ class BookController extends BaseController
 
     public function indexAction()
     {
-        if ($response = $this->requireLogin()) {
+        $routeMatch = $this->getEvent()->getRouteMatch();
+        $matchedRoute = $routeMatch?->getMatchedRouteName() ?? 'library/book';
+        $isPublicCatalog = $matchedRoute === 'catalog';
+
+        if (! $isPublicCatalog && ($response = $this->requireLogin())) {
             return $response;
+        }
+
+        $currentUser = $this->currentUser();
+        $isGuest = $currentUser === null;
+        if ($isGuest) {
+            $this->layout()->setVariable('guestCatalogMode', true);
+        }
+
+        $statusFilter = $this->queryString('status');
+        if ($isGuest && $statusFilter === '') {
+            $statusFilter = 'available';
         }
 
         $filters = [
             'search'   => trim($this->queryString('search')),
             'category' => $this->queryString('category'),
-            'status'   => $this->queryString('status'),
+            'status'   => $statusFilter,
         ];
 
+        $page = (int) $this->queryString('page', '1');
+        $page = max(1, $page);
+
+        $totalItems = $this->bookTable->countFiltered($filters);
+        $totalPages = max(1, (int) ceil($totalItems / self::PER_PAGE));
+        $page = min($page, $totalPages);
+
         return new ViewModel([
-            'books'      => $this->bookTable->fetchAll($filters),
+            'books'      => $this->bookTable->fetchPage($filters, $page, self::PER_PAGE),
             'filters'    => $filters,
             'categories' => $this->bookTable->fetchCategories(),
             'summary'    => $this->bookTable->getSummary(),
-            'isAdmin'    => $this->isAdmin(),
+            'canManage'  => $this->isAdmin(),
+            'canBorrow'  => ($currentUser['role'] ?? '') === 'student',
+            'isGuest'    => $isGuest,
+            'indexRoute' => $isPublicCatalog ? 'catalog' : 'library/book',
+            'pagination' => [
+                'page'       => $page,
+                'perPage'    => self::PER_PAGE,
+                'totalItems' => $totalItems,
+                'totalPages' => $totalPages,
+            ],
         ]);
     }
 

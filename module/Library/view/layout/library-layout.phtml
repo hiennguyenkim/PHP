@@ -19,8 +19,18 @@
     </style>
 </head>
 <body class="bg-light">
-<?php $authUser = $this->currentUser(); ?>
-<div class="d-flex<?= $authUser ? '' : ' min-vh-100 guest-shell' ?>">
+<?php
+$authUser = $this->currentUser();
+$guestCatalogMode = ! $authUser && (bool) ($guestCatalogMode ?? false);
+$bookRouteName = ($authUser['role'] ?? '') === 'admin' ? 'library/book' : 'catalog';
+$shellClass = $authUser
+    ? ''
+    : ($guestCatalogMode ? ' min-vh-100' : ' min-vh-100 guest-shell');
+$mainClass = $authUser
+    ? 'p-4'
+    : ($guestCatalogMode ? 'p-4 p-lg-5' : 'd-flex flex-grow-1 align-items-center justify-content-center p-4');
+?>
+<div class="d-flex<?= $shellClass ?>">
     <!-- Sidebar -->
     <?php if ($authUser): ?>
     <nav class="sidebar p-3 d-flex flex-column" style="width:240px;flex-shrink:0">
@@ -35,7 +45,7 @@
                 </a>
             </li>
             <li class="nav-item">
-                <a href="<?= $this->url('library/book') ?>" class="nav-link px-3 py-2">
+                <a href="<?= $this->url($bookRouteName) ?>" class="nav-link px-3 py-2">
                     <i class="bi bi-journals me-2"></i><?= $authUser['role'] === 'admin' ? 'Quản lý sách' : 'Danh mục sách' ?>
                 </a>
             </li>
@@ -56,13 +66,21 @@
             <hr class="border-white opacity-25">
             <div class="text-white-50 small mb-2">
                 <i class="bi bi-person-circle me-1"></i><?= htmlspecialchars($authUser['full_name']) ?>
-                <span class="badge bg-warning text-dark ms-1"><?= strtoupper($authUser['role']) ?></span>
+                <span class="badge bg-warning text-dark ms-1"><?= strtoupper($authUser['role'] !== '' ? $authUser['role'] : 'user') ?></span>
             </div>
             <a href="<?= $this->url('library/auth', ['action' => 'logout']) ?>" class="btn btn-sm btn-outline-light w-100">
                 <i class="bi bi-box-arrow-left me-1"></i>Đăng xuất
             </a>
         </div>
     </nav>
+    <?php endif; ?>
+
+    <?php if ($guestCatalogMode): ?>
+        <div class="position-fixed top-0 end-0 p-3 p-md-4" style="z-index: 1030;">
+            <a href="<?= $this->url('library/auth', ['action' => 'login']) ?>" class="btn btn-primary shadow-sm">
+                <i class="bi bi-box-arrow-in-right me-1"></i>Đăng nhập
+            </a>
+        </div>
     <?php endif; ?>
 
     <!-- Main Content -->
@@ -94,7 +112,7 @@
             </div>
         <?php endif; ?>
 
-        <main class="<?= $authUser ? 'p-4' : 'd-flex flex-grow-1 align-items-center justify-content-center p-4' ?>">
+        <main class="<?= $mainClass ?>">
             <?= $this->content ?>
         </main>
     </div>

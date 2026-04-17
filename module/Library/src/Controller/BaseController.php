@@ -71,7 +71,7 @@ abstract class BaseController extends AbstractActionController
     }
 
     /**
-     * @return array{id:int, username:string, full_name:string, role:string}|null
+     * @return array{id:int, username:string, email:string, full_name:string, role:string}|null
      */
     protected function currentUser(): ?array
     {
@@ -84,6 +84,7 @@ abstract class BaseController extends AbstractActionController
         return [
             'id'        => (int) ($user['id'] ?? 0),
             'username'  => (string) ($user['username'] ?? ''),
+            'email'     => (string) ($user['email'] ?? ''),
             'full_name' => (string) ($user['full_name'] ?? ''),
             'role'      => (string) ($user['role'] ?? ''),
         ];

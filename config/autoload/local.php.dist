@@ -13,4 +13,12 @@
  */
 
 return [
+    /*
+     * Keep utf8mb4 to avoid Vietnamese text garbling.
+     * You can omit these if already set in global.php.
+     */
+    'db' => [
+        'charset'   => 'utf8mb4',
+        'collation' => 'utf8mb4_unicode_ci',
+    ],
 ];

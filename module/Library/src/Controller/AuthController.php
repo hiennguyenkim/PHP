@@ -4,6 +4,8 @@ declare(strict_types=1);
 namespace Library\Controller;
 
 use Library\Form\LoginForm;
+use Library\Form\RegisterForm;
+use Library\Model\Entity\User;
 use Library\Model\Table\UserTable;
 use Library\Session\AuthSessionContainer;
 use Laminas\Form\FormElementManager;
@@ -29,8 +31,9 @@ class AuthController extends BaseController
 
     public function loginAction()
     {
-        if ($this->currentUser() !== null) {
-            return $this->redirect()->toRoute('library/dashboard');
+        $currentUser = $this->currentUser();
+        if ($currentUser !== null) {
+            return $this->redirectToRoleHome((string) ($currentUser['role'] ?? ''));
         }
 
         $form = $this->formElementManager->get(LoginForm::class);
@@ -51,14 +54,62 @@ class AuthController extends BaseController
                     $this->authSession()->user = [
                         'id'        => $user->id,
                         'username'  => $user->username,
+                        'email'     => $user->email,
                         'full_name' => $user->fullName,
                         'role'      => $user->role,
                     ];
                     $this->flash()->addSuccessMessage('Chào mừng ' . $user->fullName . '!');
-                    return $this->redirect()->toRoute('library/dashboard');
+                    return $this->redirectToRoleHome($user->role);
                 }
 
                 $this->flash()->addErrorMessage('Tên đăng nhập hoặc mật khẩu không đúng.');
+            }
+        }
+
+        return new ViewModel(['form' => $form]);
+    }
+
+    public function registerAction()
+    {
+        $currentUser = $this->currentUser();
+        if ($currentUser !== null) {
+            return $this->redirectToRoleHome((string) ($currentUser['role'] ?? ''));
+        }
+
+        $form = $this->formElementManager->get(RegisterForm::class);
+        if (! $form instanceof RegisterForm) {
+            throw new RuntimeException('Không thể khởi tạo biểu mẫu đăng ký.');
+        }
+
+        if ($this->httpRequest()->isPost()) {
+            $form->setData($this->postData());
+
+            if ($form->isValid()) {
+                /** @var array{username:string, email:string, password:string, password_confirm:string} $data */
+                $data = $form->getData();
+
+                if ($this->userTable->usernameExists($data['username'])) {
+                    $form->get('username')->setMessages(['Tên đăng nhập đã tồn tại.']);
+                } elseif ($this->userTable->emailExists($data['email'])) {
+                    $form->get('email')->setMessages(['Email đã được sử dụng.']);
+                } else {
+                    $user = new User();
+                    $user->exchangeArray([
+                        'username'  => $data['username'],
+                        'email'     => $data['email'],
+                        'full_name' => $data['username'],
+                        'role'      => 'student',
+                    ]);
+
+                    $this->userTable->saveUser(
+                        $user,
+                        password_hash($data['password'], PASSWORD_DEFAULT)
+                    );
+
+                    $this->flash()->addSuccessMessage('Đăng ký thành công. Vui lòng đăng nhập.');
+
+                    return $this->redirect()->toRoute('library/auth', ['action' => 'login']);
+                }
             }
         }
 
@@ -69,6 +120,15 @@ class AuthController extends BaseController
     {
         $this->sessionManager->destroy();
         $this->flash()->addInfoMessage('Bạn đã đăng xuất.');
-        return $this->redirect()->toRoute('library/auth', ['action' => 'login']);
+        return $this->redirect()->toRoute('catalog');
+    }
+
+    private function redirectToRoleHome(string $role): Response
+    {
+        if ($role === 'admin') {
+            return $this->redirect()->toRoute('library/book');
+        }
+
+        return $this->redirect()->toRoute('catalog');
     }
 }

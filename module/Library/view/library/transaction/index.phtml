@@ -16,6 +16,10 @@ $statusMap = [
         <a href="<?= $this->url('library/transaction', ['action' => 'borrow']) ?>" class="btn btn-success">
             <i class="bi bi-plus-circle me-1"></i>Lập phiếu mượn mới
         </a>
+    <?php else: ?>
+        <a href="<?= $this->url('library/transaction', ['action' => 'borrow']) ?>" class="btn btn-success">
+            <i class="bi bi-bookmark-plus me-1"></i>Mượn sách
+        </a>
     <?php endif; ?>
 </div>
 

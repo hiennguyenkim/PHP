@@ -37,6 +37,13 @@ class UserForm extends Form
         ]);
 
         $this->add([
+            'name'       => 'email',
+            'type'       => Element\Email::class,
+            'options'    => ['label' => 'Email'],
+            'attributes' => ['class' => 'form-control', 'maxlength' => 100, 'required' => true],
+        ]);
+
+        $this->add([
             'name'       => 'role',
             'type'       => Element\Select::class,
             'options'    => [
@@ -96,6 +103,14 @@ class UserForm extends Form
             'validators' => [[
                 'name'    => \Laminas\Validator\StringLength::class,
                 'options' => ['min' => 3, 'max' => 50],
+            ]],
+        ]);
+        $filter->add([
+            'name'       => 'email',
+            'required'   => true,
+            'filters'    => [['name' => \Laminas\Filter\StringTrim::class]],
+            'validators' => [[
+                'name' => \Laminas\Validator\EmailAddress::class,
             ]],
         ]);
         $filter->add([

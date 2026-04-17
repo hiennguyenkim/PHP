@@ -75,6 +75,7 @@ $this->layout('layout/library-layout');
                         <th style="width: 80px;">#</th>
                         <th>Họ và tên</th>
                         <th>Tên đăng nhập</th>
+                        <th>Email</th>
                         <th>Vai trò</th>
                         <th style="width: 160px;">Thao tác</th>
                     </tr>
@@ -82,7 +83,7 @@ $this->layout('layout/library-layout');
                 <tbody>
                 <?php if (! count($users)): ?>
                     <tr>
-                        <td colspan="5" class="text-center text-muted py-5">
+                        <td colspan="6" class="text-center text-muted py-5">
                             Không tìm thấy tài khoản phù hợp.
                         </td>
                     </tr>
@@ -97,6 +98,7 @@ $this->layout('layout/library-layout');
                                 <?php endif; ?>
                             </td>
                             <td><code>@<?= htmlspecialchars($user->username) ?></code></td>
+                            <td><?= htmlspecialchars($user->email) ?></td>
                             <td>
                                 <span class="badge <?= $user->role === 'admin' ? 'bg-warning text-dark' : 'bg-info text-dark' ?>">
                                     <?= $user->role === 'admin' ? 'Quản trị viên' : 'Sinh viên' ?>

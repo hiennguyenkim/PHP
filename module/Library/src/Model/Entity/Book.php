@@ -16,7 +16,7 @@ class Book
 
     public function exchangeArray(array $data): void
     {
-        $this->id        = (int)    ($data['id']         ?? 0);
+        $this->id        = (int)    ($data['id'] ?? $data['book_id'] ?? 0);
         $this->title     = (string) ($data['title']      ?? '');
         $this->author    = (string) ($data['author']     ?? '');
         $this->isbn      = (string) ($data['isbn']       ?? '');

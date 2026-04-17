@@ -40,7 +40,7 @@ class UserController extends BaseController
             'role'   => $this->queryString('role'),
         ];
 
-        $currentUser = $this->currentUser() ?? ['id' => 0, 'username' => '', 'full_name' => '', 'role' => ''];
+        $currentUser = $this->currentUser() ?? ['id' => 0, 'username' => '', 'email' => '', 'full_name' => '', 'role' => ''];
 
         return new ViewModel([
             'users'     => $this->userTable->fetchAll($filters),
@@ -69,11 +69,13 @@ class UserController extends BaseController
             $form->setData($this->postData());
 
             if ($form->isValid()) {
-                /** @var array{username:string, full_name:string, role:string, password:string} $data */
+                /** @var array{username:string, email:string, full_name:string, role:string, password:string} $data */
                 $data = $form->getData();
 
                 if ($this->userTable->usernameExists($data['username'])) {
                     $form->get('username')->setMessages(['Tên đăng nhập đã tồn tại.']);
+                } elseif ($this->userTable->emailExists($data['email'])) {
+                    $form->get('email')->setMessages(['Email đã được sử dụng.']);
                 } else {
                     $user = new User();
                     $user->exchangeArray($data);
@@ -125,11 +127,13 @@ class UserController extends BaseController
             $form->setData($payload);
 
             if ($form->isValid()) {
-                /** @var array{username:string, full_name:string, role:string, password:string} $data */
+                /** @var array{username:string, email:string, full_name:string, role:string, password:string} $data */
                 $data = $form->getData();
 
                 if ($this->userTable->usernameExists($data['username'], $id)) {
                     $form->get('username')->setMessages(['Tên đăng nhập đã tồn tại.']);
+                } elseif ($this->userTable->emailExists($data['email'], $id)) {
+                    $form->get('email')->setMessages(['Email đã được sử dụng.']);
                 } elseif (
                     $user->role === 'admin'
                     && $data['role'] !== 'admin'
@@ -141,6 +145,7 @@ class UserController extends BaseController
                     $updated->exchangeArray([
                         'id'        => $id,
                         'username'  => $data['username'],
+                        'email'     => $data['email'],
                         'full_name' => $data['full_name'],
                         'role'      => $data['role'],
                     ]);
@@ -156,6 +161,7 @@ class UserController extends BaseController
                         $session->user = [
                             'id'        => $updated->id,
                             'username'  => $updated->username,
+                            'email'     => $updated->email,
                             'full_name' => $updated->fullName,
                             'role'      => $updated->role,
                         ];

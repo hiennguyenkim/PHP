@@ -20,6 +20,7 @@ use Library\Factory\Controller\UserControllerFactory;
 use Library\Factory\Form\BookFormFactory;
 use Library\Factory\Form\BorrowFormFactory;
 use Library\Factory\Form\LoginFormFactory;
+use Library\Factory\Form\RegisterFormFactory;
 use Library\Factory\Form\UserCreateFormFactory;
 use Library\Factory\Form\UserEditFormFactory;
 use Library\Factory\Service\CirculationServiceFactory;
@@ -31,6 +32,7 @@ use Library\Factory\View\Helper\CurrentUserHelperFactory;
 use Library\Form\BookForm;
 use Library\Form\BorrowForm;
 use Library\Form\LoginForm;
+use Library\Form\RegisterForm;
 use Library\Model\Table\BookTable;
 use Library\Model\Table\BorrowTable;
 use Library\Model\Table\UserTable;
@@ -47,6 +49,13 @@ return [
                 'options' => [
                     'route'    => '/',
                     'defaults' => ['controller' => HomeController::class, 'action' => 'index'],
+                ],
+            ],
+            'catalog' => [
+                'type'    => Literal::class,
+                'options' => [
+                    'route'    => '/books',
+                    'defaults' => ['controller' => BookController::class, 'action' => 'index'],
                 ],
             ],
             'library' => [
@@ -128,6 +137,7 @@ return [
     'form_elements' => [
         'factories' => [
             LoginForm::class               => LoginFormFactory::class,
+            RegisterForm::class            => RegisterFormFactory::class,
             BookForm::class                => BookFormFactory::class,
             BorrowForm::class              => BorrowFormFactory::class,
             'Library\Form\UserCreateForm' => UserCreateFormFactory::class,
@@ -135,6 +145,7 @@ return [
         ],
         'shared' => [
             LoginForm::class               => false,
+            RegisterForm::class            => false,
             BookForm::class                => false,
             BorrowForm::class              => false,
             'Library\Form\UserCreateForm' => false,

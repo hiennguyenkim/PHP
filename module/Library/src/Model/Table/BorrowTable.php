@@ -10,6 +10,8 @@ use Laminas\Db\Sql\Select;
 
 class BorrowTable
 {
+    private const PK = 'borrow_id';
+
     private TableGateway $tableGateway;
 
     public function __construct(TableGateway $tableGateway)
@@ -25,7 +27,7 @@ class BorrowTable
         $sql      = $this->tableGateway->getSql();
         $select   = $sql->select()
             ->columns([
-                'id',
+                'id' => self::PK,
                 'book_id',
                 'user_id',
                 'borrow_date',
@@ -39,9 +41,9 @@ class BorrowTable
                      END"
                 ),
             ])
-            ->join('books', 'borrow_records.book_id = books.id',
+            ->join('books', 'borrow_records.book_id = books.book_id',
                 ['book_title' => 'title', 'book_isbn' => 'isbn'])
-            ->join('users', 'borrow_records.user_id = users.id',
+            ->join('users', 'borrow_records.user_id = users.user_id',
                 ['full_name', 'username'])
             ->order('borrow_records.created_at DESC');
 
@@ -100,7 +102,7 @@ class BorrowTable
 
     public function getRecord(int $id): BorrowRecord
     {
-        $rowset = $this->tableGateway->select(['id' => $id]);
+        $rowset = $this->tableGateway->select([self::PK => $id]);
         $row    = $rowset->current();
         if (! $row instanceof BorrowRecord) {
             throw new \RuntimeException(sprintf('Không tìm thấy phiếu mượn ID %d.', $id));
@@ -121,7 +123,7 @@ class BorrowTable
 
     public function returnBook(int $id): void
     {
-        $this->tableGateway->update(['status' => 'returned'], ['id' => $id]);
+        $this->tableGateway->update(['status' => 'returned'], [self::PK => $id]);
     }
 
     public function countBorrowed(?int $userId = null): int
@@ -237,7 +239,7 @@ class BorrowTable
     {
         $sql    = $this->tableGateway->getSql();
         $select = $sql->select()
-            ->columns(['id'])
+            ->columns([self::PK])
             ->where(['user_id' => $userId])
             ->where("(status = 'overdue' OR (status = 'borrowed' AND return_date < CURDATE()))")
             ->limit(1);
@@ -250,7 +252,7 @@ class BorrowTable
     public function hasActiveLoan(int $userId, int $bookId): bool
     {
         $rowset = $this->tableGateway->select(function (Select $select) use ($userId, $bookId) {
-            $select->columns(['id']);
+            $select->columns([self::PK]);
             $select->where([
                 'user_id' => $userId,
                 'book_id' => $bookId,
@@ -264,7 +266,7 @@ class BorrowTable
     public function hasBorrowHistoryForBook(int $bookId): bool
     {
         $rowset = $this->tableGateway->select(function (Select $select) use ($bookId) {
-            $select->columns(['id']);
+            $select->columns([self::PK]);
             $select->where(['book_id' => $bookId]);
             $select->limit(1);
         });

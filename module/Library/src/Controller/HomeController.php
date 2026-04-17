@@ -4,7 +4,6 @@ declare(strict_types=1);
 namespace Library\Controller;
 
 use Library\Session\AuthSessionContainer;
-use Laminas\Http\Response;
 
 /**
  * @psalm-suppress PropertyNotSetInConstructor
@@ -19,10 +18,20 @@ class HomeController extends BaseController
 
     public function indexAction()
     {
-        if ($this->currentUser() !== null) {
-            return $this->redirect()->toRoute('library/dashboard');
+        $currentUser = $this->currentUser();
+        if ($currentUser !== null) {
+            if (($currentUser['role'] ?? '') === 'admin') {
+                return $this->redirect()->toRoute('library/book');
+            }
+
+            return $this->redirect()->toRoute('catalog');
         }
 
-        return $this->redirect()->toRoute('library/auth', ['action' => 'login']);
+        if ($this->httpRequest()->getUri()->getPath() === '/admin') {
+            return $this->redirect()->toRoute('library/auth', ['action' => 'login']);
+        }
+
+        return $this->redirect()->toRoute('catalog');
     }
+
 }
