@@ -39,6 +39,12 @@ use Library\Model\Table\UserTable;
 use Library\Service\CirculationService;
 use Library\Session\AuthSessionContainer;
 use Library\View\Helper\CurrentUserHelper;
+use Library\Controller\Api\BookApiController;
+use Library\Controller\Api\UserApiController;
+use Library\Controller\Api\BorrowApiController;
+use Library\Factory\Controller\Api\BookApiControllerFactory;
+use Library\Factory\Controller\Api\UserApiControllerFactory;
+use Library\Factory\Controller\Api\BorrowApiControllerFactory;
 
 return [
     // ── Routing ─────────────────────────────────────────────────────────
@@ -107,6 +113,54 @@ return [
                     ],
                 ],
             ],
+            'api' => [
+                'type' => Literal::class,
+                'options' => [
+                    'route'    => '/api',
+                    'defaults' => [
+                        'controller' => BookApiController::class, // Default, though routes usually specific
+                    ],
+                ],
+                'may_terminate' => false,
+                'child_routes' => [
+                    'books' => [
+                        'type' => Segment::class,
+                        'options' => [
+                            'route' => '/books[/:id]',
+                            'constraints' => [
+                                'id' => '[0-9]+',
+                            ],
+                            'defaults' => [
+                                'controller' => BookApiController::class,
+                            ],
+                        ],
+                    ],
+                    'users' => [
+                        'type' => Segment::class,
+                        'options' => [
+                            'route' => '/users[/:id]',
+                            'constraints' => [
+                                'id' => '[0-9]+',
+                            ],
+                            'defaults' => [
+                                'controller' => UserApiController::class,
+                            ],
+                        ],
+                    ],
+                    'borrows' => [
+                        'type' => Segment::class,
+                        'options' => [
+                            'route' => '/borrows[/:id]',
+                            'constraints' => [
+                                'id' => '[0-9]+',
+                            ],
+                            'defaults' => [
+                                'controller' => BorrowApiController::class,
+                            ],
+                        ],
+                    ],
+                ],
+            ],
         ],
     ],
 
@@ -119,6 +173,9 @@ return [
             DashboardController::class   => DashboardControllerFactory::class,
             TransactionController::class => TransactionControllerFactory::class,
             UserController::class        => UserControllerFactory::class,
+            BookApiController::class     => BookApiControllerFactory::class,
+            UserApiController::class     => UserApiControllerFactory::class,
+            BorrowApiController::class   => BorrowApiControllerFactory::class,
         ],
     ],
 
@@ -177,5 +234,10 @@ return [
         'template_path_stack' => [
             __DIR__ . '/../view',
         ],
+        'strategies' => [
+            'ViewJsonStrategy',
+        ],
+        'json_exceptions' => true,
+        'json_options' => 256, // JSON_UNESCAPED_UNICODE
     ],
 ];

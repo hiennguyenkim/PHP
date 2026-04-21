@@ -23,4 +23,10 @@ return [
             'db' => \Laminas\Db\Adapter\Adapter::class,
         ],
     ],
+    'view_manager' => [
+        'strategies' => [
+            'ViewJsonStrategy',
+        ],
+        'json_options' => 256, // JSON_UNESCAPED_UNICODE
+    ],
 ];

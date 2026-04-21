@@ -52,12 +52,20 @@ CREATE TABLE IF NOT EXISTS borrow_records (
  ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- -------------------------------------------------------
--- Dữ liệu mẫu thực tế (reset toàn bộ để tránh dữ liệu ảo)
+-- Dữ liệu mẫu thực tế (Sửa lại phần reset)
 -- -------------------------------------------------------
 SET FOREIGN_KEY_CHECKS = 0;
-TRUNCATE TABLE borrow_records;
-TRUNCATE TABLE books;
-TRUNCATE TABLE users;
+
+-- Dùng DELETE thay vì TRUNCATE để đảm bảo an toàn cho khóa ngoại
+DELETE FROM borrow_records;
+DELETE FROM books;
+DELETE FROM users;
+
+-- Reset lại chỉ số Auto Increment về 1
+ALTER TABLE borrow_records AUTO_INCREMENT = 1;
+ALTER TABLE books AUTO_INCREMENT = 1;
+ALTER TABLE users AUTO_INCREMENT = 1;
+
 SET FOREIGN_KEY_CHECKS = 1;
 
 -- Tài khoản mặc định:
