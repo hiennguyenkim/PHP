@@ -9,7 +9,6 @@ use Library\Model\Table\BookTable;
 use Library\Model\Table\BorrowTable;
 use Library\Session\AuthSessionContainer;
 use Laminas\Form\FormElementManager;
-use Laminas\Http\Response;
 use Laminas\View\Model\ViewModel;
 use RuntimeException;
 

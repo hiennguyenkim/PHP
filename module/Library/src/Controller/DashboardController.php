@@ -7,7 +7,6 @@ use Library\Model\Table\BookTable;
 use Library\Model\Table\BorrowTable;
 use Library\Model\Table\UserTable;
 use Library\Session\AuthSessionContainer;
-use Laminas\Http\Response;
 use Laminas\View\Model\ViewModel;
 
 /**

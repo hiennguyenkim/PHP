@@ -3,10 +3,10 @@ declare(strict_types=1);
 
 namespace Library\Controller\Api;
 
+use Laminas\Http\Response;
 use Laminas\Mvc\Controller\AbstractRestfulController;
-use Laminas\View\Model\JsonModel;
-use Library\Model\Table\BorrowTable;
 use Library\Model\Entity\BorrowRecord;
+use Library\Model\Table\BorrowTable;
 
 class BorrowApiController extends AbstractRestfulController
 {
@@ -23,6 +23,10 @@ class BorrowApiController extends AbstractRestfulController
         $records = $this->table->fetchAllWithDetails();
         $data = [];
         foreach ($records as $record) {
+            if (! $record instanceof BorrowRecord) {
+                continue;
+            }
+
             $data[] = $record->getArrayCopy();
         }
         return $this->jsonResponse($data);
@@ -34,7 +38,7 @@ class BorrowApiController extends AbstractRestfulController
         try {
             $record = $this->table->getRecord((int) $id);
             return $this->jsonResponse($record->getArrayCopy());
-        } catch (\Exception $e) {
+        } catch (\Exception) {
             return $this->jsonResponse(['error' => 'Borrow record not found'], 404);
         }
     }
@@ -42,8 +46,13 @@ class BorrowApiController extends AbstractRestfulController
     // POST /api/borrows
     public function create($data)
     {
-        $data = json_decode($this->getRequest()->getContent(), true) ?: [];
-        if (!isset($data['book_id']) || !isset($data['user_id']) || !isset($data['borrow_date']) || !isset($data['return_date'])) {
+        $data = $this->resolvePayload($data);
+        if (
+            ! isset($data['book_id'])
+            || ! isset($data['user_id'])
+            || ! isset($data['borrow_date'])
+            || ! isset($data['return_date'])
+        ) {
             return $this->jsonResponse(['error' => 'Missing book_id, user_id, borrow_date, or return_date'], 400);
         }
 
@@ -63,7 +72,7 @@ class BorrowApiController extends AbstractRestfulController
     // PUT /api/borrows/:id (Usually for returning a book)
     public function update($id, $data)
     {
-        $data = json_decode($this->getRequest()->getContent(), true) ?: [];
+        $data = $this->resolvePayload($data);
         if (isset($data['action']) && $data['action'] === 'return') {
             try {
                 $this->table->returnBook((int) $id);
@@ -83,13 +92,30 @@ class BorrowApiController extends AbstractRestfulController
     }
 
     /**
+     * @return array<string, mixed>
+     */
+    private function resolvePayload(mixed $data): array
+    {
+        $payload = json_decode($this->getRequest()->getContent(), true);
+        if (is_array($payload)) {
+            return $payload;
+        }
+
+        return is_array($data) ? $data : [];
+    }
+
+    /**
      * Helper to return JSON response with correct Vietnamese encoding.
      */
-    private function jsonResponse(array $data, int $statusCode = 200)
+    private function jsonResponse(array $data, int $statusCode = 200): Response
     {
         $response = $this->getResponse();
+        if (! $response instanceof Response) {
+            throw new \RuntimeException('Unexpected response instance.');
+        }
+
         $response->setStatusCode($statusCode);
-        $response->setContent(json_encode($data, JSON_UNESCAPED_UNICODE));
+        $response->setContent((string) json_encode($data, JSON_UNESCAPED_UNICODE));
         $response->getHeaders()->addHeaderLine('Content-Type', 'application/json');
         return $response;
     }

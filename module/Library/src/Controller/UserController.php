@@ -8,7 +8,6 @@ use Library\Model\Entity\User;
 use Library\Model\Table\UserTable;
 use Library\Session\AuthSessionContainer;
 use Laminas\Form\FormElementManager;
-use Laminas\Http\Response;
 use Laminas\View\Model\ViewModel;
 use RuntimeException;
 

@@ -21,6 +21,8 @@ class BorrowTable
 
     /**
      * Fetch all borrow records joined with book title and user info.
+     *
+     * @return array<int, BorrowRecord>
      */
     public function fetchAllWithDetails(array $filters = [], ?int $userId = null, int $limit = 0): array
     {
@@ -108,7 +110,7 @@ class BorrowTable
             $row = $r;
             break;
         }
-        if (! $row) {
+        if (! $row instanceof BorrowRecord) {
             throw new \RuntimeException(sprintf('Không tìm thấy phiếu mượn ID %d.', $id));
         }
         return $row;

@@ -33,5 +33,4 @@ class HomeController extends BaseController
 
         return $this->redirect()->toRoute('catalog');
     }
-
 }

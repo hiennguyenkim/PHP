@@ -41,4 +41,24 @@ class BorrowRecord
         }
         return $this->returnDate < date('Y-m-d');
     }
+
+    /**
+     * @return array<string, int|string>
+     */
+    public function getArrayCopy(): array
+    {
+        return [
+            'id'          => $this->id,
+            'book_id'     => $this->bookId,
+            'user_id'     => $this->userId,
+            'borrow_date' => $this->borrowDate,
+            'return_date' => $this->returnDate,
+            'status'      => $this->status,
+            'created_at'  => $this->createdAt,
+            'book_title'  => $this->bookTitle,
+            'book_isbn'   => $this->bookIsbn,
+            'full_name'   => $this->userFullName,
+            'username'    => $this->username,
+        ];
+    }
 }

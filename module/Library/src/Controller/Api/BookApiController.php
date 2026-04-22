@@ -3,8 +3,8 @@ declare(strict_types=1);
 
 namespace Library\Controller\Api;
 
+use Laminas\Http\Response;
 use Laminas\Mvc\Controller\AbstractRestfulController;
-use Laminas\View\Model\JsonModel;
 use Library\Model\Table\BookTable;
 use Library\Model\Entity\Book;
 
@@ -23,6 +23,10 @@ class BookApiController extends AbstractRestfulController
         $books = $this->table->fetchAll();
         $data = [];
         foreach ($books as $book) {
+            if (! $book instanceof Book) {
+                continue;
+            }
+
             $data[] = $book->getArrayCopy();
         }
         return $this->jsonResponse($data);
@@ -42,7 +46,7 @@ class BookApiController extends AbstractRestfulController
     // POST /api/books
     public function create($data)
     {
-        $data = json_decode($this->getRequest()->getContent(), true) ?: [];
+        $data = $this->requestJsonBody();
         $book = new Book();
         $book->exchangeArray($data);
         try {
@@ -56,7 +60,7 @@ class BookApiController extends AbstractRestfulController
     // PUT /api/books/:id
     public function update($id, $data)
     {
-        $data = json_decode($this->getRequest()->getContent(), true) ?: [];
+        $data = $this->requestJsonBody();
         try {
             $book = $this->table->getBook((int) $id);
             $book->exchangeArray($data);
@@ -80,13 +84,27 @@ class BookApiController extends AbstractRestfulController
     }
 
     /**
+     * @return array<string, mixed>
+     */
+    private function requestJsonBody(): array
+    {
+        $payload = json_decode($this->getRequest()->getContent(), true);
+
+        return is_array($payload) ? $payload : [];
+    }
+
+    /**
      * Helper to return JSON response with correct Vietnamese encoding.
      */
-    private function jsonResponse(array $data, int $statusCode = 200)
+    private function jsonResponse(array $data, int $statusCode = 200): Response
     {
         $response = $this->getResponse();
+        if (! $response instanceof Response) {
+            throw new \RuntimeException('Unexpected response instance.');
+        }
+
         $response->setStatusCode($statusCode);
-        $response->setContent(json_encode($data, JSON_UNESCAPED_UNICODE));
+        $response->setContent((string) json_encode($data, JSON_UNESCAPED_UNICODE));
         $response->getHeaders()->addHeaderLine('Content-Type', 'application/json');
         return $response;
     }

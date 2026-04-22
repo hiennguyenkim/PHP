@@ -12,7 +12,6 @@ use Library\Model\Table\UserTable;
 use Library\Session\AuthSessionContainer;
 use Library\Service\CirculationService;
 use Laminas\Form\FormElementManager;
-use Laminas\Http\Response;
 use Laminas\View\Model\ViewModel;
 use RuntimeException;
 

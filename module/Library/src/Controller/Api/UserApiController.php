@@ -3,8 +3,8 @@ declare(strict_types=1);
 
 namespace Library\Controller\Api;
 
+use Laminas\Http\Response;
 use Laminas\Mvc\Controller\AbstractRestfulController;
-use Laminas\View\Model\JsonModel;
 use Library\Model\Table\UserTable;
 use Library\Model\Entity\User;
 
@@ -23,6 +23,10 @@ class UserApiController extends AbstractRestfulController
         $users = $this->table->fetchAll();
         $data = [];
         foreach ($users as $user) {
+            if (! $user instanceof User) {
+                continue;
+            }
+
             $data[] = [
                 'user_id'   => $user->id,
                 'username'  => $user->username,
@@ -46,7 +50,7 @@ class UserApiController extends AbstractRestfulController
                 'full_name' => $user->fullName,
                 'role'      => $user->role,
             ]);
-        } catch (\Exception $e) {
+        } catch (\Exception) {
             return $this->jsonResponse(['error' => 'User not found'], 404);
         }
     }
@@ -54,7 +58,7 @@ class UserApiController extends AbstractRestfulController
     // POST /api/users
     public function create($data)
     {
-        $data = json_decode($this->getRequest()->getContent(), true) ?: [];
+        $data = $this->resolvePayload($data);
         if (!isset($data['username']) || !isset($data['password']) || !isset($data['email'])) {
             return $this->jsonResponse(['error' => 'Missing username, password, or email'], 400);
         }
@@ -82,7 +86,7 @@ class UserApiController extends AbstractRestfulController
     // PUT /api/users/:id
     public function update($id, $data)
     {
-        $data = json_decode($this->getRequest()->getContent(), true) ?: [];
+        $data = $this->resolvePayload($data);
         try {
             $user = $this->table->getUser((int) $id);
             $user->exchangeArray($data);
@@ -107,13 +111,30 @@ class UserApiController extends AbstractRestfulController
     }
 
     /**
+     * @return array<string, mixed>
+     */
+    private function resolvePayload(mixed $data): array
+    {
+        $payload = json_decode($this->getRequest()->getContent(), true);
+        if (is_array($payload)) {
+            return $payload;
+        }
+
+        return is_array($data) ? $data : [];
+    }
+
+    /**
      * Helper to return JSON response with correct Vietnamese encoding.
      */
-    private function jsonResponse(array $data, int $statusCode = 200)
+    private function jsonResponse(array $data, int $statusCode = 200): Response
     {
         $response = $this->getResponse();
+        if (! $response instanceof Response) {
+            throw new \RuntimeException('Unexpected response instance.');
+        }
+
         $response->setStatusCode($statusCode);
-        $response->setContent(json_encode($data, JSON_UNESCAPED_UNICODE));
+        $response->setContent((string) json_encode($data, JSON_UNESCAPED_UNICODE));
         $response->getHeaders()->addHeaderLine('Content-Type', 'application/json');
         return $response;
     }
