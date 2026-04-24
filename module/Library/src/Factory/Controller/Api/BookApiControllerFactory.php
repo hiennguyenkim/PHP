@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace Library\Factory\Controller\Api;
@@ -12,8 +13,6 @@ class BookApiControllerFactory implements FactoryInterface
 {
     public function __invoke(ContainerInterface $container, $requestedName, array $options = null)
     {
-        return new BookApiController(
-            $container->get(BookTable::class)
-        );
+        return new BookApiController($container->get(BookTable::class));
     }
 }

@@ -12,11 +12,11 @@ $statusMap = [
         <h1 class="h3 fw-bold mb-0"><i class="bi bi-arrow-left-right me-2 text-primary"></i><?= $isAdmin ? 'Mượn / Trả sách' : 'Phiếu mượn của tôi' ?></h1>
         <p class="text-muted mb-0"><?= $isAdmin ? 'Theo dõi toàn bộ vòng đời mượn trả của thư viện.' : 'Theo dõi tình trạng các đầu sách bạn đang mượn.' ?></p>
     </div>
-    <?php if ($isAdmin): ?>
+    <?php if ($isAdmin) : ?>
         <a href="<?= $this->url('library/transaction', ['action' => 'borrow']) ?>" class="btn btn-success">
             <i class="bi bi-plus-circle me-1"></i>Lập phiếu mượn mới
         </a>
-    <?php else: ?>
+    <?php else : ?>
         <a href="<?= $this->url('library/transaction', ['action' => 'borrow']) ?>" class="btn btn-success">
             <i class="bi bi-bookmark-plus me-1"></i>Mượn sách
         </a>
@@ -76,12 +76,12 @@ $statusMap = [
                     <option value="returned" <?= ($filters['status'] ?? '') === 'returned' ? 'selected' : '' ?>>Đã trả</option>
                 </select>
             </div>
-            <?php if ($isAdmin): ?>
+            <?php if ($isAdmin) : ?>
                 <div class="col-lg-2">
                     <label class="form-label fw-semibold">Sinh viên</label>
                     <select name="user_id" class="form-select">
                         <option value="">Tất cả sinh viên</option>
-                        <?php foreach ($users as $user): ?>
+                        <?php foreach ($users as $user) : ?>
                             <option value="<?= (int) $user->id ?>" <?= ($filters['user_id'] ?? '') === (string) $user->id ? 'selected' : '' ?>>
                                 <?= htmlspecialchars($user->fullName) ?>
                             </option>
@@ -108,30 +108,31 @@ $statusMap = [
                         <th>#ID</th>
                         <th>Tên sách</th>
                         <th>ISBN</th>
-                        <?php if ($isAdmin): ?>
+                        <?php if ($isAdmin) : ?>
                             <th>Sinh viên</th>
                         <?php endif; ?>
                         <th>Ngày mượn</th>
                         <th>Hạn trả</th>
+                        <th>Ngày trả</th>
                         <th>Trạng thái</th>
                         <th style="width: 160px;">Thao tác</th>
                     </tr>
                 </thead>
                 <tbody>
-                <?php if ($records === []): ?>
+                <?php if ($records === []) : ?>
                     <tr>
-                        <td colspan="<?= $isAdmin ? '8' : '7' ?>" class="text-center py-5 text-muted">
+                        <td colspan="<?= $isAdmin ? '9' : '8' ?>" class="text-center py-5 text-muted">
                             Chưa có phiếu mượn nào phù hợp với bộ lọc hiện tại.
                         </td>
                     </tr>
-                <?php else: ?>
-                    <?php foreach ($records as $record): ?>
+                <?php else : ?>
+                    <?php foreach ($records as $record) : ?>
                         <?php [$statusLabel, $statusClass] = $statusMap[$record->status] ?? [$record->status, 'secondary']; ?>
                         <tr>
                             <td class="text-muted">#<?= (int) $record->id ?></td>
                             <td class="fw-semibold"><?= htmlspecialchars($record->bookTitle) ?></td>
                             <td><code><?= htmlspecialchars($record->bookIsbn !== '' ? $record->bookIsbn : '—') ?></code></td>
-                            <?php if ($isAdmin): ?>
+                            <?php if ($isAdmin) : ?>
                                 <td>
                                     <?= htmlspecialchars($record->userFullName) ?>
                                     <small class="text-muted d-block">@<?= htmlspecialchars($record->username) ?></small>
@@ -141,9 +142,10 @@ $statusMap = [
                             <td class="<?= in_array($record->status, ['borrowed', 'overdue'], true) && $record->returnDate < date('Y-m-d') ? 'text-danger fw-bold' : '' ?>">
                                 <?= htmlspecialchars($record->returnDate) ?>
                             </td>
+                            <td><?= htmlspecialchars($record->returnedAt !== '' ? $record->returnedAt : '—') ?></td>
                             <td><span class="badge bg-<?= $statusClass ?>"><?= $statusLabel ?></span></td>
                             <td>
-                                <?php if ($isAdmin && in_array($record->status, ['borrowed', 'overdue'], true)): ?>
+                                <?php if ($isAdmin && in_array($record->status, ['borrowed', 'overdue'], true)) : ?>
                                     <form method="POST"
                                           action="<?= $this->url('library/transaction', ['action' => 'return', 'id' => $record->id]) ?>"
                                           data-confirm="Xác nhận sinh viên '<?= htmlspecialchars($record->userFullName) ?>' đã trả sách '<?= htmlspecialchars($record->bookTitle) ?>'?">
@@ -151,9 +153,9 @@ $statusMap = [
                                             <i class="bi bi-check-circle me-1"></i>Nhận trả
                                         </button>
                                     </form>
-                                <?php elseif (! $isAdmin && in_array($record->status, ['borrowed', 'overdue'], true)): ?>
+                                <?php elseif (! $isAdmin && in_array($record->status, ['borrowed', 'overdue'], true)) : ?>
                                     <span class="text-muted small">Liên hệ thủ thư để trả sách</span>
-                                <?php else: ?>
+                                <?php else : ?>
                                     <span class="text-muted small">Hoàn tất</span>
                                 <?php endif; ?>
                             </td>

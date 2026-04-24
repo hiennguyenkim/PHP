@@ -1,4 +1,5 @@
-<?php $this->headTitle('Đăng nhập'); $this->layout('layout/library-layout'); ?>
+<?php $this->headTitle('Đăng nhập');
+$this->layout('layout/library-layout'); ?>
 <div class="card login-card p-4 w-100" style="max-width:420px">
     <div class="text-center mb-4">
         <div class="fs-1 text-primary"><i class="bi bi-book-half"></i></div>
@@ -11,7 +12,7 @@
             <input type="text" name="username" class="form-control" placeholder="username"
                    value="<?= htmlspecialchars((string) $form->get('username')->getValue()) ?>" autofocus required>
             <?php $messages = $form->get('username')->getMessages(); ?>
-            <?php if ($messages): ?>
+            <?php if ($messages) : ?>
                 <div class="text-danger small mt-1"><?= htmlspecialchars(implode(', ', $messages)) ?></div>
             <?php endif; ?>
         </div>
@@ -19,13 +20,13 @@
             <label class="form-label fw-semibold">Mật khẩu</label>
             <input type="password" name="password" class="form-control" placeholder="••••••" required>
             <?php $messages = $form->get('password')->getMessages(); ?>
-            <?php if ($messages): ?>
+            <?php if ($messages) : ?>
                 <div class="text-danger small mt-1"><?= htmlspecialchars(implode(', ', $messages)) ?></div>
             <?php endif; ?>
         </div>
         <?= $this->formHidden($form->get('csrf')) ?>
         <?php $messages = $form->get('csrf')->getMessages(); ?>
-        <?php if ($messages): ?>
+        <?php if ($messages) : ?>
             <div class="text-danger small mb-3"><?= htmlspecialchars(implode(', ', $messages)) ?></div>
         <?php endif; ?>
         <button type="submit" class="btn btn-primary w-100 py-2 fw-semibold">

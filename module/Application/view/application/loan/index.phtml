@@ -55,7 +55,7 @@ $createUrl = $this->url('loan', ['action' => 'create']);
             <span>Trang thai</span>
             <select name="status">
                 <option value="">Tat ca trang thai</option>
-                <?php foreach ($statusLabels as $status => $label): ?>
+                <?php foreach ($statusLabels as $status => $label) : ?>
                     <option value="<?= htmlspecialchars($status, ENT_QUOTES, 'UTF-8') ?>"<?= ($filters['status'] ?? '') === $status ? ' selected' : '' ?>>
                         <?= htmlspecialchars($label, ENT_QUOTES, 'UTF-8') ?>
                     </option>
@@ -63,12 +63,12 @@ $createUrl = $this->url('loan', ['action' => 'create']);
             </select>
         </label>
 
-        <?php if ($isAdmin): ?>
+        <?php if ($isAdmin) : ?>
             <label class="field">
                 <span>Thanh vien</span>
                 <select name="user_id">
                     <option value="">Tat ca thanh vien</option>
-                    <?php foreach ($users as $user): ?>
+                    <?php foreach ($users as $user) : ?>
                         <option value="<?= (int) $user['id'] ?>"<?= (string) ($filters['user_id'] ?? '') === (string) $user['id'] ? ' selected' : '' ?>>
                             <?= htmlspecialchars((string) $user['full_name'], ENT_QUOTES, 'UTF-8') ?>
                         </option>
@@ -81,7 +81,7 @@ $createUrl = $this->url('loan', ['action' => 'create']);
             <span>Sach</span>
             <select name="book_id">
                 <option value="">Tat ca sach</option>
-                <?php foreach ($books as $book): ?>
+                <?php foreach ($books as $book) : ?>
                     <option value="<?= (int) $book['id'] ?>"<?= (string) ($filters['book_id'] ?? '') === (string) $book['id'] ? ' selected' : '' ?>>
                         <?= htmlspecialchars((string) $book['title'], ENT_QUOTES, 'UTF-8') ?>
                     </option>
@@ -101,7 +101,7 @@ $createUrl = $this->url('loan', ['action' => 'create']);
         <table class="data-table">
             <thead>
                 <tr>
-                    <?php if ($isAdmin): ?>
+                    <?php if ($isAdmin) : ?>
                         <th>Thanh vien</th>
                     <?php endif; ?>
                     <th>Sach</th>
@@ -113,15 +113,15 @@ $createUrl = $this->url('loan', ['action' => 'create']);
                 </tr>
             </thead>
             <tbody>
-                <?php if ($loans === []): ?>
+                <?php if ($loans === []) : ?>
                     <tr>
                         <td colspan="<?= $isAdmin ? '7' : '6' ?>" class="table-empty">Chua co phieu muon nao phu hop.</td>
                     </tr>
-                <?php else: ?>
-                    <?php foreach ($loans as $loan): ?>
+                <?php else : ?>
+                    <?php foreach ($loans as $loan) : ?>
                         <?php $status = (string) ($loan['display_status'] ?? $loan['status']); ?>
                         <tr>
-                            <?php if ($isAdmin): ?>
+                            <?php if ($isAdmin) : ?>
                                 <td>
                                     <div class="cell-title"><?= htmlspecialchars((string) $loan['full_name'], ENT_QUOTES, 'UTF-8') ?></div>
                                     <small class="cell-subtitle">@<?= htmlspecialchars((string) $loan['username'], ENT_QUOTES, 'UTF-8') ?></small>
@@ -134,15 +134,15 @@ $createUrl = $this->url('loan', ['action' => 'create']);
                             <td><?= htmlspecialchars(date('d/m/Y', strtotime((string) $loan['borrow_date'])), ENT_QUOTES, 'UTF-8') ?></td>
                             <td><?= htmlspecialchars(date('d/m/Y', strtotime((string) $loan['due_date'])), ENT_QUOTES, 'UTF-8') ?></td>
                             <td>
-                                <?= !empty($loan['returned_date'])
+                                <?= ! empty($loan['returned_date'])
                                     ? htmlspecialchars(date('d/m/Y', strtotime((string) $loan['returned_date'])), ENT_QUOTES, 'UTF-8')
                                     : '<span class="cell-subtitle">Chua tra</span>' ?>
                             </td>
                             <td><span class="status-pill status-pill-<?= htmlspecialchars($status, ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars($statusLabels[$status] ?? $status, ENT_QUOTES, 'UTF-8') ?></span></td>
                             <td class="actions">
-                                <?php if ($isAdmin): ?>
+                                <?php if ($isAdmin) : ?>
                                     <a class="button button-secondary button-small" href="<?= $this->url('loan', ['action' => 'edit', 'id' => (int) $loan['id']]) ?>">Sua</a>
-                                    <?php if ($status === 'pending'): ?>
+                                    <?php if ($status === 'pending') : ?>
                                         <form method="post" action="<?= $this->url('loan', ['action' => 'approve', 'id' => (int) $loan['id']]) ?>" class="inline-form" data-confirm="Duyet yeu cau muon sach nay?">
                                             <button type="submit" class="button button-primary button-small">Duyet</button>
                                         </form>
@@ -150,17 +150,17 @@ $createUrl = $this->url('loan', ['action' => 'create']);
                                             <button type="submit" class="button button-danger button-small">Huy</button>
                                         </form>
                                     <?php endif; ?>
-                                    <?php if (in_array($status, ['borrowed', 'overdue'], true)): ?>
+                                    <?php if (in_array($status, ['borrowed', 'overdue'], true)) : ?>
                                         <form method="post" action="<?= $this->url('loan', ['action' => 'mark-return', 'id' => (int) $loan['id']]) ?>" class="inline-form" data-confirm="Xac nhan sach da duoc tra?">
                                             <button type="submit" class="button button-primary button-small">Tra sach</button>
                                         </form>
                                     <?php endif; ?>
-                                <?php else: ?>
-                                    <?php if ($status === 'pending'): ?>
+                                <?php else : ?>
+                                    <?php if ($status === 'pending') : ?>
                                         <form method="post" action="<?= $this->url('loan', ['action' => 'cancel', 'id' => (int) $loan['id']]) ?>" class="inline-form" data-confirm="Huy yeu cau muon sach nay?">
                                             <button type="submit" class="button button-danger button-small">Huy yeu cau</button>
                                         </form>
-                                    <?php else: ?>
+                                    <?php else : ?>
                                         <span class="cell-subtitle">Khong co</span>
                                     <?php endif; ?>
                                 <?php endif; ?>

@@ -18,7 +18,7 @@ $statusLabels = [
         <a href="<?= $this->url('library/book') ?>" class="btn btn-outline-primary">
             <i class="bi bi-journals me-1"></i><?= $isAdmin ? 'Mở kho sách' : 'Xem danh mục' ?>
         </a>
-        <?php if ($isAdmin): ?>
+        <?php if ($isAdmin) : ?>
             <a href="<?= $this->url('library/transaction', ['action' => 'borrow']) ?>" class="btn btn-primary">
                 <i class="bi bi-plus-circle me-1"></i>Lập phiếu mượn
             </a>
@@ -127,9 +127,9 @@ $statusLabels = [
                         <div class="rounded-3 border p-3">
                             <div class="fw-semibold mb-2"><?= $isAdmin ? 'Khuyến nghị vận hành' : 'Khuyến nghị cá nhân' ?></div>
                             <div class="text-muted small">
-                                <?php if ($isAdmin): ?>
+                                <?php if ($isAdmin) : ?>
                                     Ưu tiên xử lý các phiếu quá hạn và theo dõi những đầu sách đang cạn bản khả dụng để duy trì chất lượng phục vụ.
-                                <?php else: ?>
+                                <?php else : ?>
                                     Hãy kiểm tra các khoản mượn sắp đến hạn để tránh phát sinh trạng thái quá hạn trong hồ sơ thư viện của bạn.
                                 <?php endif; ?>
                             </div>
@@ -153,32 +153,34 @@ $statusLabels = [
                     <tr>
                         <th>#ID</th>
                         <th>Tên sách</th>
-                        <?php if ($isAdmin): ?>
+                        <?php if ($isAdmin) : ?>
                             <th>Sinh viên</th>
                         <?php endif; ?>
                         <th>Ngày mượn</th>
                         <th>Hạn trả</th>
+                        <th>Ngày trả</th>
                         <th>Trạng thái</th>
                     </tr>
                 </thead>
                 <tbody>
-                <?php if ($recentBorrows === []): ?>
+                <?php if ($recentBorrows === []) : ?>
                     <tr>
-                        <td colspan="<?= $isAdmin ? '6' : '5' ?>" class="text-center text-muted py-4">
+                        <td colspan="<?= $isAdmin ? '7' : '6' ?>" class="text-center text-muted py-4">
                             Chưa có dữ liệu mượn trả gần đây.
                         </td>
                     </tr>
-                <?php else: ?>
-                    <?php foreach ($recentBorrows as $record): ?>
+                <?php else : ?>
+                    <?php foreach ($recentBorrows as $record) : ?>
                         <?php $status = $statusLabels[$record->status] ?? ['label' => $record->status, 'class' => 'secondary']; ?>
                         <tr>
                             <td class="text-muted">#<?= (int) $record->id ?></td>
                             <td class="fw-semibold"><?= htmlspecialchars($record->bookTitle) ?></td>
-                            <?php if ($isAdmin): ?>
+                            <?php if ($isAdmin) : ?>
                                 <td><?= htmlspecialchars($record->userFullName) ?></td>
                             <?php endif; ?>
                             <td><?= htmlspecialchars($record->borrowDate) ?></td>
                             <td><?= htmlspecialchars($record->returnDate) ?></td>
+                            <td><?= htmlspecialchars($record->returnedAt !== '' ? $record->returnedAt : '—') ?></td>
                             <td><span class="badge bg-<?= $status['class'] ?>"><?= $status['label'] ?></span></td>
                         </tr>
                     <?php endforeach; ?>

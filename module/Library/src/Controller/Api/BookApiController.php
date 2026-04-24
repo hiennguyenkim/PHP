@@ -1,17 +1,20 @@
 <?php
+
 declare(strict_types=1);
 
 namespace Library\Controller\Api;
 
 use Laminas\Http\Response;
 use Laminas\Mvc\Controller\AbstractRestfulController;
-use Library\Model\Table\BookTable;
 use Library\Model\Entity\Book;
+use Library\Model\Table\BookTable;
 
+/**
+ * @psalm-suppress PropertyNotSetInConstructor
+ */
 class BookApiController extends AbstractRestfulController
 {
     private BookTable $table;
-
     public function __construct(BookTable $table)
     {
         $this->table = $table;
@@ -31,9 +34,8 @@ class BookApiController extends AbstractRestfulController
         }
         return $this->jsonResponse($data);
     }
-
     // GET /api/books/:id
-    public function get($id)
+    public function get(mixed $id)
     {
         try {
             $book = $this->table->getBook((int) $id);
@@ -44,7 +46,7 @@ class BookApiController extends AbstractRestfulController
     }
 
     // POST /api/books
-    public function create($data)
+    public function create(mixed $data)
     {
         $data = $this->requestJsonBody();
         $book = new Book();
@@ -58,7 +60,7 @@ class BookApiController extends AbstractRestfulController
     }
 
     // PUT /api/books/:id
-    public function update($id, $data)
+    public function update(mixed $id, mixed $data)
     {
         $data = $this->requestJsonBody();
         try {
@@ -73,7 +75,7 @@ class BookApiController extends AbstractRestfulController
     }
 
     // DELETE /api/books/:id
-    public function delete($id)
+    public function delete(mixed $id)
     {
         try {
             $this->table->deleteBook((int) $id);
@@ -88,9 +90,17 @@ class BookApiController extends AbstractRestfulController
      */
     private function requestJsonBody(): array
     {
-        $payload = json_decode($this->getRequest()->getContent(), true);
+        $content = $this->getRequest()->getContent();
+        if (! is_string($content) || $content === '') {
+            return [];
+        }
 
-        return is_array($payload) ? $payload : [];
+        $payload = json_decode($content, true);
+        if (! is_array($payload)) {
+            return [];
+        }
+
+        return $this->normalizePayload($payload);
     }
 
     /**
@@ -98,6 +108,7 @@ class BookApiController extends AbstractRestfulController
      */
     private function jsonResponse(array $data, int $statusCode = 200): Response
     {
+
         $response = $this->getResponse();
         if (! $response instanceof Response) {
             throw new \RuntimeException('Unexpected response instance.');
@@ -107,5 +118,20 @@ class BookApiController extends AbstractRestfulController
         $response->setContent((string) json_encode($data, JSON_UNESCAPED_UNICODE));
         $response->getHeaders()->addHeaderLine('Content-Type', 'application/json');
         return $response;
+    }
+
+    /**
+     * @param array<array-key, mixed> $payload
+     * @return array<string, mixed>
+     * @psalm-suppress MixedAssignment
+     */
+    private function normalizePayload(array $payload): array
+    {
+        $normalized = [];
+        foreach ($payload as $key => $value) {
+            $normalized[(string) $key] = $value;
+        }
+
+        return $normalized;
     }
 }

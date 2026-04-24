@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace Library\Controller;
@@ -9,6 +10,7 @@ use Library\Model\Table\BookTable;
 use Library\Model\Table\BorrowTable;
 use Library\Session\AuthSessionContainer;
 use Laminas\Form\FormElementManager;
+use Laminas\Http\Response;
 use Laminas\View\Model\ViewModel;
 use RuntimeException;
 
@@ -29,7 +31,10 @@ class BookController extends BaseController
         parent::__construct($authSessionContainer);
     }
 
-    public function indexAction()
+    /**
+     * @psalm-suppress InvalidReturnType
+     */
+    public function indexAction(): Response|ViewModel
     {
         $routeMatch = $this->getEvent()->getRouteMatch();
         $matchedRoute = $routeMatch?->getMatchedRouteName() ?? 'library/book';
@@ -42,7 +47,10 @@ class BookController extends BaseController
         $currentUser = $this->currentUser();
         $isGuest = $currentUser === null;
         if ($isGuest) {
-            $this->layout()->setVariable('guestCatalogMode', true);
+            $layout = $this->layout();
+            if (method_exists($layout, 'setVariable')) {
+                $layout->setVariable('guestCatalogMode', true);
+            }
         }
 
         $statusFilter = $this->queryString('status');
@@ -81,7 +89,29 @@ class BookController extends BaseController
         ]);
     }
 
-    public function addAction()
+    public function viewAction(): Response|ViewModel
+    {
+        if ($response = $this->requireAdmin()) {
+            return $response;
+        }
+
+        $id = $this->routeInt('id');
+
+        try {
+            $book = $this->bookTable->getBook($id);
+        } catch (\RuntimeException $exception) {
+            $this->flash()->addErrorMessage($exception->getMessage());
+
+            return $this->redirect()->toRoute('library/book');
+        }
+
+        return new ViewModel([
+            'book'            => $book,
+            'hasActiveBorrow' => $this->borrowTable->hasActiveBorrowForBook($id),
+        ]);
+    }
+
+    public function addAction(): Response|ViewModel
     {
         if ($response = $this->requireAdmin()) {
             return $response;
@@ -111,7 +141,7 @@ class BookController extends BaseController
         return $view;
     }
 
-    public function editAction()
+    public function editAction(): Response|ViewModel
     {
         if ($response = $this->requireAdmin()) {
             return $response;
@@ -147,7 +177,7 @@ class BookController extends BaseController
         return $view;
     }
 
-    public function deleteAction()
+    public function deleteAction(): Response
     {
         if ($response = $this->requireAdmin()) {
             return $response;
@@ -159,8 +189,8 @@ class BookController extends BaseController
 
         $id = $this->routeInt('id');
 
-        if ($this->borrowTable->hasBorrowHistoryForBook($id)) {
-            $this->flash()->addErrorMessage('Không thể xóa sách đã từng có lịch sử mượn trả.');
+        if ($this->borrowTable->hasActiveBorrowForBook($id)) {
+            $this->flash()->addErrorMessage('Không thể xóa sách vì vẫn còn lượt mượn chưa trả.');
 
             return $this->redirect()->toRoute('library/book');
         }

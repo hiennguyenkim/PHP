@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace Library\Controller;
@@ -29,11 +30,11 @@ class AuthController extends BaseController
         parent::__construct($authSessionContainer);
     }
 
-    public function loginAction()
+    public function loginAction(): Response|ViewModel
     {
         $currentUser = $this->currentUser();
         if ($currentUser !== null) {
-            return $this->redirectToRoleHome((string) ($currentUser['role'] ?? ''));
+            return $this->redirectToRoleHome($currentUser['role'] ?? '');
         }
 
         $form = $this->formElementManager->get(LoginForm::class);
@@ -69,11 +70,11 @@ class AuthController extends BaseController
         return new ViewModel(['form' => $form]);
     }
 
-    public function registerAction()
+    public function registerAction(): Response|ViewModel
     {
         $currentUser = $this->currentUser();
         if ($currentUser !== null) {
-            return $this->redirectToRoleHome((string) ($currentUser['role'] ?? ''));
+            return $this->redirectToRoleHome($currentUser['role'] ?? '');
         }
 
         $form = $this->formElementManager->get(RegisterForm::class);
@@ -116,7 +117,7 @@ class AuthController extends BaseController
         return new ViewModel(['form' => $form]);
     }
 
-    public function logoutAction()
+    public function logoutAction(): Response
     {
         $this->sessionManager->destroy();
         $this->flash()->addInfoMessage('Bạn đã đăng xuất.');

@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace Library\Controller;
@@ -51,13 +52,26 @@ abstract class BaseController extends AbstractActionController
 
     /**
      * @return array<string, mixed>
+     * @psalm-suppress MixedAssignment
      */
     protected function postData(): array
     {
         $post = $this->httpRequest()->getPost();
-        $data = method_exists($post, 'toArray') ? $post->toArray() : [];
+        if (! is_object($post) || ! method_exists($post, 'toArray')) {
+            return [];
+        }
 
-        return is_array($data) ? $data : [];
+        $data = $post->toArray();
+        if (! is_array($data)) {
+            return [];
+        }
+
+        $normalized = [];
+        foreach ($data as $key => $value) {
+            $normalized[(string) $key] = $value;
+        }
+
+        return $normalized;
     }
 
     protected function queryString(string $name, string $default = ''): string

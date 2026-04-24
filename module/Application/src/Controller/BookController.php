@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace Application\Controller;
@@ -18,8 +19,12 @@ class BookController extends BaseController
 
     public function indexAction(): ViewModel
     {
-        if ($r = $this->requireLogin()) return $r;
-        if ($r = $this->requireAdmin()) return $r;
+        if ($r = $this->requireLogin()) {
+            return $r;
+        }
+        if ($r = $this->requireAdmin()) {
+            return $r;
+        }
 
         $filters = [
             'search'   => trim((string) $this->getRequest()->getQuery('search', '')),
@@ -37,8 +42,12 @@ class BookController extends BaseController
 
     public function createAction(): ViewModel
     {
-        if ($r = $this->requireLogin()) return $r;
-        if ($r = $this->requireAdmin()) return $r;
+        if ($r = $this->requireLogin()) {
+            return $r;
+        }
+        if ($r = $this->requireAdmin()) {
+            return $r;
+        }
 
         if ($this->getRequest()->isPost()) {
             $form   = $this->collectFormData();
@@ -70,8 +79,12 @@ class BookController extends BaseController
 
     public function editAction(): ViewModel
     {
-        if ($r = $this->requireLogin()) return $r;
-        if ($r = $this->requireAdmin()) return $r;
+        if ($r = $this->requireLogin()) {
+            return $r;
+        }
+        if ($r = $this->requireAdmin()) {
+            return $r;
+        }
 
         $id   = (int) $this->params()->fromRoute('id', 0);
         $book = $this->bookModel->getById($id);
@@ -130,10 +143,14 @@ class BookController extends BaseController
 
     public function deleteAction()
     {
-        if ($r = $this->requireLogin()) return $r;
-        if ($r = $this->requireAdmin()) return $r;
+        if ($r = $this->requireLogin()) {
+            return $r;
+        }
+        if ($r = $this->requireAdmin()) {
+            return $r;
+        }
 
-        if (!$this->getRequest()->isPost()) {
+        if (! $this->getRequest()->isPost()) {
             return $this->redirect()->toRoute('book');
         }
 
@@ -225,7 +242,7 @@ class BookController extends BaseController
             }
         }
 
-        if ($form['cover_image'] !== '' && !filter_var($form['cover_image'], FILTER_VALIDATE_URL)) {
+        if ($form['cover_image'] !== '' && ! filter_var($form['cover_image'], FILTER_VALIDATE_URL)) {
             $errors['cover_image'] = 'Lien ket anh bia phai la URL hop le.';
         }
 

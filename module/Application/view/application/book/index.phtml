@@ -41,7 +41,7 @@ $statusLabels = [
             <span>The loai</span>
             <select name="category">
                 <option value="">Tat ca the loai</option>
-                <?php foreach ($categories as $category): ?>
+                <?php foreach ($categories as $category) : ?>
                     <option value="<?= htmlspecialchars($category, ENT_QUOTES, 'UTF-8') ?>"<?= ($filters['category'] ?? '') === $category ? ' selected' : '' ?>>
                         <?= htmlspecialchars($category, ENT_QUOTES, 'UTF-8') ?>
                     </option>
@@ -53,7 +53,7 @@ $statusLabels = [
             <span>Trang thai</span>
             <select name="status">
                 <option value="">Tat ca trang thai</option>
-                <?php foreach ($statusLabels as $status => $label): ?>
+                <?php foreach ($statusLabels as $status => $label) : ?>
                     <option value="<?= htmlspecialchars($status, ENT_QUOTES, 'UTF-8') ?>"<?= ($filters['status'] ?? '') === $status ? ' selected' : '' ?>>
                         <?= htmlspecialchars($label, ENT_QUOTES, 'UTF-8') ?>
                     </option>
@@ -91,12 +91,12 @@ $statusLabels = [
                 </tr>
             </thead>
             <tbody>
-                <?php if ($books === []): ?>
+                <?php if ($books === []) : ?>
                     <tr>
                         <td colspan="8" class="table-empty">Chua co dau sach nao phu hop bo loc hien tai.</td>
                     </tr>
-                <?php else: ?>
-                    <?php foreach ($books as $book): ?>
+                <?php else : ?>
+                    <?php foreach ($books as $book) : ?>
                         <?php
                         $confirmMessage = 'Ban co chac chan muon xoa sach ' . $book['title'] . ' khong?';
                         $status = (string) $book['status'];
@@ -105,7 +105,7 @@ $statusLabels = [
                             <td>#<?= (int) $book['id'] ?></td>
                             <td>
                                 <div class="cell-title"><?= htmlspecialchars((string) $book['title'], ENT_QUOTES, 'UTF-8') ?></div>
-                                <?php if (!empty($book['isbn'])): ?>
+                                <?php if (! empty($book['isbn'])) : ?>
                                     <small class="cell-subtitle">ISBN: <?= htmlspecialchars((string) $book['isbn'], ENT_QUOTES, 'UTF-8') ?></small>
                                 <?php endif; ?>
                             </td>

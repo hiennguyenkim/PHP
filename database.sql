@@ -46,10 +46,34 @@ CREATE TABLE IF NOT EXISTS borrow_records (
     borrow_date DATE         NOT NULL,
     return_date DATE         DEFAULT NULL,
     status      ENUM('borrowed','returned','overdue') NOT NULL DEFAULT 'borrowed',
+    returned_at DATETIME     DEFAULT NULL,
     created_at  DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT fk_borrow_book FOREIGN KEY (book_id) REFERENCES books(book_id)  ON DELETE CASCADE,
     CONSTRAINT fk_borrow_user FOREIGN KEY (user_id) REFERENCES users(user_id)  ON DELETE CASCADE
  ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Đảm bảo cột returned_at tồn tại cho DB đã tạo trước đó.
+SET @col_exists := (
+    SELECT COUNT(*)
+    FROM information_schema.COLUMNS
+    WHERE TABLE_SCHEMA = DATABASE()
+      AND TABLE_NAME = 'borrow_records'
+      AND COLUMN_NAME = 'returned_at'
+);
+SET @ddl := IF(
+    @col_exists = 0,
+    'ALTER TABLE borrow_records ADD COLUMN returned_at DATETIME DEFAULT NULL AFTER status',
+    'SELECT 1'
+);
+PREPARE stmt FROM @ddl;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
+
+-- Backfill cho dữ liệu cũ: nếu đã trả nhưng chưa có returned_at thì lấy mốc hiện tại.
+UPDATE borrow_records
+SET returned_at = NOW()
+WHERE status = 'returned'
+  AND returned_at IS NULL;
 
 -- -------------------------------------------------------
 -- Dữ liệu mẫu thực tế (Sửa lại phần reset)
@@ -145,3 +169,21 @@ INSERT INTO books (title, author, isbn, category, quantity, status) VALUES
 ('Cà phê cùng Tony', 'Tony Buổi Sáng', NULL, 'Kỹ năng sống', 7, 'available'),
 ('Trên đường băng', 'Tony Buổi Sáng', NULL, 'Kỹ năng sống', 6, 'available'),
 ('Tuổi trẻ đáng giá bao nhiêu', 'Rosie Nguyễn', NULL, 'Kỹ năng sống', 6, 'available');
+
+-- Dữ liệu mẫu mượn / trả:
+-- - borrowed: đang mượn, chưa đến hạn
+-- - overdue: quá hạn
+-- - returned: đã trả gần đây (giữ lại trong cửa sổ 30 ngày)
+INSERT INTO borrow_records (book_id, user_id, borrow_date, return_date, status, returned_at) VALUES
+(12, 2,  DATE_SUB(CURDATE(), INTERVAL 12 DAY), DATE_ADD(CURDATE(), INTERVAL 10 DAY), 'borrowed', NULL),
+(21, 3,  DATE_SUB(CURDATE(), INTERVAL 7 DAY),  DATE_ADD(CURDATE(), INTERVAL 14 DAY), 'borrowed', NULL),
+(31, 4,  DATE_SUB(CURDATE(), INTERVAL 3 DAY),  DATE_ADD(CURDATE(), INTERVAL 20 DAY), 'borrowed', NULL),
+(44, 5,  DATE_SUB(CURDATE(), INTERVAL 30 DAY), DATE_SUB(CURDATE(), INTERVAL 5 DAY),  'overdue',  NULL),
+(52, 6,  DATE_SUB(CURDATE(), INTERVAL 25 DAY), DATE_SUB(CURDATE(), INTERVAL 2 DAY),  'overdue',  NULL),
+(2,  7,  DATE_SUB(CURDATE(), INTERVAL 35 DAY), DATE_SUB(CURDATE(), INTERVAL 8 DAY),  'overdue',  NULL),
+(19, 8,  DATE_SUB(CURDATE(), INTERVAL 15 DAY), DATE_SUB(CURDATE(), INTERVAL 1 DAY),  'returned', DATE_SUB(NOW(), INTERVAL 1 DAY)),
+(23, 9,  DATE_SUB(CURDATE(), INTERVAL 22 DAY), DATE_SUB(CURDATE(), INTERVAL 6 DAY),  'returned', DATE_SUB(NOW(), INTERVAL 3 DAY)),
+(33, 10, DATE_SUB(CURDATE(), INTERVAL 18 DAY), DATE_SUB(CURDATE(), INTERVAL 4 DAY),  'returned', DATE_SUB(NOW(), INTERVAL 4 DAY)),
+(47, 11, DATE_SUB(CURDATE(), INTERVAL 28 DAY), DATE_SUB(CURDATE(), INTERVAL 3 DAY),  'returned', DATE_SUB(NOW(), INTERVAL 2 DAY)),
+(58, 2,  DATE_SUB(CURDATE(), INTERVAL 26 DAY), DATE_SUB(CURDATE(), INTERVAL 11 DAY), 'returned', DATE_SUB(NOW(), INTERVAL 9 DAY)),
+(60, 3,  DATE_SUB(CURDATE(), INTERVAL 14 DAY), DATE_SUB(CURDATE(), INTERVAL 1 DAY),  'returned', NOW());

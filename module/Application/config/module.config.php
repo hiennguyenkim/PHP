@@ -11,7 +11,7 @@ use Laminas\ServiceManager\Factory\InvokableFactory;
 return [
     'router' => [
         'routes' => [
-            
+
             'auth' => [
                 'type' => Segment::class,
                 'options' => [
@@ -88,11 +88,16 @@ return [
         'controllers' => [
         'factories' => [
             Controller\IndexController::class => InvokableFactory::class,
-            Controller\AuthController::class => \Laminas\ServiceManager\AbstractFactory\ReflectionBasedAbstractFactory::class,
-            Controller\BookController::class => \Laminas\ServiceManager\AbstractFactory\ReflectionBasedAbstractFactory::class,
-            Controller\DashboardController::class => \Laminas\ServiceManager\AbstractFactory\ReflectionBasedAbstractFactory::class,
-            Controller\LoanController::class => \Laminas\ServiceManager\AbstractFactory\ReflectionBasedAbstractFactory::class,
-            Controller\UserController::class => \Laminas\ServiceManager\AbstractFactory\ReflectionBasedAbstractFactory::class,
+            Controller\AuthController::class =>
+                \Laminas\ServiceManager\AbstractFactory\ReflectionBasedAbstractFactory::class,
+            Controller\BookController::class =>
+                \Laminas\ServiceManager\AbstractFactory\ReflectionBasedAbstractFactory::class,
+            Controller\DashboardController::class =>
+                \Laminas\ServiceManager\AbstractFactory\ReflectionBasedAbstractFactory::class,
+            Controller\LoanController::class =>
+                \Laminas\ServiceManager\AbstractFactory\ReflectionBasedAbstractFactory::class,
+            Controller\UserController::class =>
+                \Laminas\ServiceManager\AbstractFactory\ReflectionBasedAbstractFactory::class,
         ],
     ],
 

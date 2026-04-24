@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace Application\Controller;
@@ -38,7 +39,7 @@ class AuthController extends BaseController
             if ($errors === []) {
                 $user = $this->userModel->getByUsername($username);
 
-                if ($user === null || !password_verify($password, (string) $user['password'])) {
+                if ($user === null || ! password_verify($password, (string) $user['password'])) {
                     $errors['general'] = 'Ten dang nhap hoac mat khau khong dung.';
                 } elseif (($user['status'] ?? 'active') !== 'active') {
                     $errors['general'] = 'Tai khoan nay dang tam khoa.';
@@ -133,7 +134,7 @@ class AuthController extends BaseController
 
         if ($form['email'] === '') {
             $errors['email'] = 'Email la bat buoc.';
-        } elseif (!filter_var($form['email'], FILTER_VALIDATE_EMAIL)) {
+        } elseif (! filter_var($form['email'], FILTER_VALIDATE_EMAIL)) {
             $errors['email'] = 'Email khong dung dinh dang.';
         }
 

@@ -77,23 +77,24 @@ $this->layout('layout/library-layout');
                         <th>Tên đăng nhập</th>
                         <th>Email</th>
                         <th>Vai trò</th>
-                        <th style="width: 160px;">Thao tác</th>
+                        <th>Ngày trả gần nhất</th>
+                        <th style="width: 390px;">Thao tác</th>
                     </tr>
                 </thead>
                 <tbody>
-                <?php if (! count($users)): ?>
+                <?php if (! count($users)) : ?>
                     <tr>
-                        <td colspan="6" class="text-center text-muted py-5">
+                        <td colspan="7" class="text-center text-muted py-5">
                             Không tìm thấy tài khoản phù hợp.
                         </td>
                     </tr>
-                <?php else: ?>
-                    <?php foreach ($users as $user): ?>
+                <?php else : ?>
+                    <?php foreach ($users as $user) : ?>
                         <tr>
                             <td class="text-muted"><?= (int) $user->id ?></td>
                             <td class="fw-semibold">
                                 <?= htmlspecialchars($user->fullName) ?>
-                                <?php if ((int) $user->id === (int) $currentId): ?>
+                                <?php if ((int) $user->id === (int) $currentId) : ?>
                                     <span class="badge bg-light text-dark border ms-1">Bạn</span>
                                 <?php endif; ?>
                             </td>
@@ -104,11 +105,33 @@ $this->layout('layout/library-layout');
                                     <?= $user->role === 'admin' ? 'Quản trị viên' : 'Sinh viên' ?>
                                 </span>
                             </td>
+                            <td><?= htmlspecialchars($user->lastReturnedAt !== '' ? $user->lastReturnedAt : '—') ?></td>
                             <td>
-                                <a href="<?= $this->url('library/user', ['action' => 'edit', 'id' => $user->id]) ?>"
-                                   class="btn btn-sm btn-outline-primary">
-                                    <i class="bi bi-pencil me-1"></i>Chỉnh sửa
-                                </a>
+                                <div class="d-flex flex-wrap gap-2">
+                                    <a href="<?= $this->url('library/user', ['action' => 'view', 'id' => $user->id]) ?>"
+                                       class="btn btn-sm btn-outline-secondary">
+                                        <i class="bi bi-eye me-1"></i>Chi tiết
+                                    </a>
+                                    <a href="<?= $this->url('library/user', ['action' => 'edit', 'id' => $user->id]) ?>"
+                                       class="btn btn-sm btn-outline-primary">
+                                        <i class="bi bi-pencil me-1"></i>Chỉnh sửa
+                                    </a>
+                                    <?php if ($user->role === 'student') : ?>
+                                        <?php $confirmMessage = "Bạn có chắc muốn xóa sinh viên '" . $user->fullName . "'?"; ?>
+                                        <form method="POST"
+                                              action="<?= $this->url('library/user', ['action' => 'delete', 'id' => $user->id]) ?>"
+                                              data-confirm="<?= htmlspecialchars($confirmMessage) ?>"
+                                              class="d-inline">
+                                            <button type="submit"
+                                                    class="btn btn-sm btn-outline-danger"
+                                                <?= (int) $user->id === (int) $currentId ? 'disabled' : '' ?>>
+                                                <i class="bi bi-trash me-1"></i>Xóa
+                                            </button>
+                                        </form>
+                                    <?php else : ?>
+                                        <span class="text-muted small align-self-center">Chỉ xóa tài khoản sinh viên</span>
+                                    <?php endif; ?>
+                                </div>
                             </td>
                         </tr>
                     <?php endforeach; ?>

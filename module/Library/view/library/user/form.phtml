@@ -31,14 +31,14 @@ $this->layout('layout/library-layout');
                         <input type="text" name="full_name" class="form-control"
                                value="<?= htmlspecialchars((string) ($form->get('full_name')->getValue() ?? '')) ?>"
                                maxlength="100" required>
-                        <?php $messages = $form->get('full_name')->getMessages(); if ($messages): ?>
+                        <?php $messages = $form->get('full_name')->getMessages(); if ($messages) : ?>
                             <div class="text-danger small mt-1"><?= htmlspecialchars(implode(', ', $messages)) ?></div>
                         <?php endif; ?>
                     </div>
                     <div class="col-md-5">
                         <label class="form-label fw-semibold">Vai trò *</label>
                         <?= $this->formSelect($form->get('role')->setAttribute('class', 'form-select')) ?>
-                        <?php $messages = $form->get('role')->getMessages(); if ($messages): ?>
+                        <?php $messages = $form->get('role')->getMessages(); if ($messages) : ?>
                             <div class="text-danger small mt-1"><?= htmlspecialchars(implode(', ', $messages)) ?></div>
                         <?php endif; ?>
                     </div>
@@ -48,7 +48,7 @@ $this->layout('layout/library-layout');
                         <input type="text" name="username" class="form-control"
                                value="<?= htmlspecialchars((string) ($form->get('username')->getValue() ?? '')) ?>"
                                maxlength="50" required>
-                        <?php $messages = $form->get('username')->getMessages(); if ($messages): ?>
+                        <?php $messages = $form->get('username')->getMessages(); if ($messages) : ?>
                             <div class="text-danger small mt-1"><?= htmlspecialchars(implode(', ', $messages)) ?></div>
                         <?php endif; ?>
                     </div>
@@ -57,7 +57,7 @@ $this->layout('layout/library-layout');
                         <input type="email" name="email" class="form-control"
                                value="<?= htmlspecialchars((string) ($form->get('email')->getValue() ?? '')) ?>"
                                maxlength="100" required>
-                        <?php $messages = $form->get('email')->getMessages(); if ($messages): ?>
+                        <?php $messages = $form->get('email')->getMessages(); if ($messages) : ?>
                             <div class="text-danger small mt-1"><?= htmlspecialchars(implode(', ', $messages)) ?></div>
                         <?php endif; ?>
                     </div>
@@ -73,24 +73,24 @@ $this->layout('layout/library-layout');
                     <div class="col-md-6">
                         <label class="form-label fw-semibold"><?= $isEdit ? 'Mật khẩu mới' : 'Mật khẩu *' ?></label>
                         <input type="password" name="password" class="form-control" <?= $isEdit ? '' : 'required' ?>>
-                        <?php if ($isEdit): ?>
+                        <?php if ($isEdit) : ?>
                             <div class="form-text">Để trống nếu bạn không muốn thay đổi mật khẩu hiện tại.</div>
                         <?php endif; ?>
-                        <?php $messages = $form->get('password')->getMessages(); if ($messages): ?>
+                        <?php $messages = $form->get('password')->getMessages(); if ($messages) : ?>
                             <div class="text-danger small mt-1"><?= htmlspecialchars(implode(', ', $messages)) ?></div>
                         <?php endif; ?>
                     </div>
                     <div class="col-md-6">
                         <label class="form-label fw-semibold"><?= $isEdit ? 'Xác nhận mật khẩu mới' : 'Xác nhận mật khẩu *' ?></label>
                         <input type="password" name="password_confirm" class="form-control" <?= $isEdit ? '' : 'required' ?>>
-                        <?php $messages = $form->get('password_confirm')->getMessages(); if ($messages): ?>
+                        <?php $messages = $form->get('password_confirm')->getMessages(); if ($messages) : ?>
                             <div class="text-danger small mt-1"><?= htmlspecialchars(implode(', ', $messages)) ?></div>
                         <?php endif; ?>
                     </div>
                 </div>
 
                 <?= $this->formHidden($form->get('csrf')) ?>
-                <?php $messages = $form->get('csrf')->getMessages(); if ($messages): ?>
+                <?php $messages = $form->get('csrf')->getMessages(); if ($messages) : ?>
                     <div class="text-danger small mt-3"><?= htmlspecialchars(implode(', ', $messages)) ?></div>
                 <?php endif; ?>
 

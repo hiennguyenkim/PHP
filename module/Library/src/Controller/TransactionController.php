@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace Library\Controller;
@@ -12,6 +13,7 @@ use Library\Model\Table\UserTable;
 use Library\Session\AuthSessionContainer;
 use Library\Service\CirculationService;
 use Laminas\Form\FormElementManager;
+use Laminas\Http\Response;
 use Laminas\View\Model\ViewModel;
 use RuntimeException;
 
@@ -32,7 +34,10 @@ class TransactionController extends BaseController
         parent::__construct($authSessionContainer);
     }
 
-    public function indexAction()
+    /**
+     * @psalm-suppress InvalidReturnType
+     */
+    public function indexAction(): Response|ViewModel
     {
         if ($response = $this->requireLogin()) {
             return $response;
@@ -60,7 +65,7 @@ class TransactionController extends BaseController
         ]);
     }
 
-    public function borrowAction()
+    public function borrowAction(): Response|ViewModel
     {
         if ($response = $this->requireLogin()) {
             return $response;
@@ -68,7 +73,7 @@ class TransactionController extends BaseController
 
         $isAdmin = $this->isAdmin();
         $currentUser = $this->currentUser() ?? [];
-        $currentUserId = (int) ($currentUser['id'] ?? 0);
+        $currentUserId = $currentUser['id'] ?? 0;
 
         // Build dropdown options
         $bookOptions = [];
@@ -92,7 +97,9 @@ class TransactionController extends BaseController
                 $userOptions[$user->id] = $user->fullName . ' (@' . $user->username . ')';
             }
         } elseif ($currentUserId > 0) {
-            $userOptions[$currentUserId] = ((string) ($currentUser['full_name'] ?? 'Sinh viên')) . ' (@' . ((string) ($currentUser['username'] ?? 'student')) . ')';
+            $currentFullName = $currentUser['full_name'] ?? 'Sinh viên';
+            $currentUsername = $currentUser['username'] ?? 'student';
+            $userOptions[$currentUserId] = $currentFullName . ' (@' . $currentUsername . ')';
         }
 
         $form = $this->formElementManager->get(BorrowForm::class);
@@ -158,7 +165,7 @@ class TransactionController extends BaseController
         ]);
     }
 
-    public function returnAction()
+    public function returnAction(): Response
     {
         if ($response = $this->requireAdmin()) {
             return $response;

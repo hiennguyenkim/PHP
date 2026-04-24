@@ -1,13 +1,16 @@
 <?php
+
 declare(strict_types=1);
 
 namespace Library\Controller;
 
 use Library\Form\UserForm;
 use Library\Model\Entity\User;
+use Library\Model\Table\BorrowTable;
 use Library\Model\Table\UserTable;
 use Library\Session\AuthSessionContainer;
 use Laminas\Form\FormElementManager;
+use Laminas\Http\Response;
 use Laminas\View\Model\ViewModel;
 use RuntimeException;
 
@@ -22,13 +25,17 @@ class UserController extends BaseController
 
     public function __construct(
         AuthSessionContainer $authSessionContainer,
+        private BorrowTable $borrowTable,
         private UserTable $userTable,
         private FormElementManager $formElementManager
     ) {
         parent::__construct($authSessionContainer);
     }
 
-    public function indexAction()
+    /**
+     * @psalm-suppress InvalidReturnType
+     */
+    public function indexAction(): Response|ViewModel
     {
         if ($response = $this->requireAdmin()) {
             return $response;
@@ -39,7 +46,13 @@ class UserController extends BaseController
             'role'   => $this->queryString('role'),
         ];
 
-        $currentUser = $this->currentUser() ?? ['id' => 0, 'username' => '', 'email' => '', 'full_name' => '', 'role' => ''];
+        $currentUser = $this->currentUser() ?? [
+            'id' => 0,
+            'username' => '',
+            'email' => '',
+            'full_name' => '',
+            'role' => '',
+        ];
 
         return new ViewModel([
             'users'     => $this->userTable->fetchAll($filters),
@@ -53,7 +66,52 @@ class UserController extends BaseController
         ]);
     }
 
-    public function addAction()
+    public function viewAction(): Response|ViewModel
+    {
+        if ($response = $this->requireAdmin()) {
+            return $response;
+        }
+
+        $id = $this->routeInt('id');
+
+        try {
+            $user = $this->userTable->getUser($id);
+        } catch (\RuntimeException $exception) {
+            $this->flash()->addErrorMessage($exception->getMessage());
+
+            return $this->redirect()->toRoute('library/user');
+        }
+
+        $currentId = $this->currentUser()['id'] ?? 0;
+        $hasBorrowHistory = $this->borrowTable->hasBorrowHistoryForUser($id);
+        $canDelete = $user->role === 'student'
+            && $id !== $currentId
+            && ! $hasBorrowHistory;
+
+        $deleteBlockedReason = null;
+        if (! $canDelete) {
+            if ($user->role !== 'student') {
+                $deleteBlockedReason = 'Chỉ có thể xóa tài khoản sinh viên.';
+            } elseif ($id === $currentId) {
+                $deleteBlockedReason = 'Không thể xóa tài khoản đang đăng nhập.';
+            } elseif ($hasBorrowHistory) {
+                $deleteBlockedReason = 'Không thể xóa sinh viên đã có lịch sử mượn/trả.';
+            }
+        }
+
+        return new ViewModel([
+            'user'               => $user,
+            'currentId'          => $currentId,
+            'activeLoans'        => $this->borrowTable->countActiveLoansForUser($id),
+            'hasOverdueLoans'    => $this->borrowTable->hasOverdueLoans($id),
+            'hasBorrowHistory'   => $hasBorrowHistory,
+            'borrowRecords'      => $this->borrowTable->fetchAllWithDetails([], $id),
+            'canDelete'          => $canDelete,
+            'deleteBlockedReason' => $deleteBlockedReason,
+        ]);
+    }
+
+    public function addAction(): Response|ViewModel
     {
         if ($response = $this->requireAdmin()) {
             return $response;
@@ -99,7 +157,7 @@ class UserController extends BaseController
         return $view;
     }
 
-    public function editAction()
+    public function editAction(): Response|ViewModel
     {
         if ($response = $this->requireAdmin()) {
             return $response;
@@ -186,5 +244,49 @@ class UserController extends BaseController
         $view->setTemplate('library/user/form');
 
         return $view;
+    }
+
+    public function deleteAction(): Response
+    {
+        if ($response = $this->requireAdmin()) {
+            return $response;
+        }
+
+        if (! $this->httpRequest()->isPost()) {
+            return $this->redirect()->toRoute('library/user');
+        }
+
+        $id = $this->routeInt('id');
+
+        try {
+            $user = $this->userTable->getUser($id);
+        } catch (\RuntimeException $exception) {
+            $this->flash()->addErrorMessage($exception->getMessage());
+
+            return $this->redirect()->toRoute('library/user');
+        }
+
+        if ($user->role !== 'student') {
+            $this->flash()->addErrorMessage('Chỉ có thể xóa tài khoản sinh viên.');
+
+            return $this->redirect()->toRoute('library/user');
+        }
+
+        if (($this->currentUser()['id'] ?? 0) === $id) {
+            $this->flash()->addErrorMessage('Không thể xóa tài khoản đang đăng nhập.');
+
+            return $this->redirect()->toRoute('library/user');
+        }
+
+        if ($this->borrowTable->hasBorrowHistoryForUser($id)) {
+            $this->flash()->addErrorMessage('Không thể xóa sinh viên đã có lịch sử mượn/trả.');
+
+            return $this->redirect()->toRoute('library/user');
+        }
+
+        $this->userTable->deleteUser($id);
+        $this->flash()->addSuccessMessage('Đã xóa tài khoản sinh viên thành công.');
+
+        return $this->redirect()->toRoute('library/user');
     }
 }

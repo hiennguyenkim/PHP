@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace Library\Controller\Api;
@@ -8,10 +9,12 @@ use Laminas\Mvc\Controller\AbstractRestfulController;
 use Library\Model\Entity\BorrowRecord;
 use Library\Model\Table\BorrowTable;
 
+/**
+ * @psalm-suppress PropertyNotSetInConstructor
+ */
 class BorrowApiController extends AbstractRestfulController
 {
     private BorrowTable $table;
-
     public function __construct(BorrowTable $table)
     {
         $this->table = $table;
@@ -31,10 +34,10 @@ class BorrowApiController extends AbstractRestfulController
         }
         return $this->jsonResponse($data);
     }
-
     // GET /api/borrows/:id
-    public function get($id)
+    public function get(mixed $id)
     {
+
         try {
             $record = $this->table->getRecord((int) $id);
             return $this->jsonResponse($record->getArrayCopy());
@@ -44,7 +47,7 @@ class BorrowApiController extends AbstractRestfulController
     }
 
     // POST /api/borrows
-    public function create($data)
+    public function create(mixed $data)
     {
         $data = $this->resolvePayload($data);
         if (
@@ -56,12 +59,15 @@ class BorrowApiController extends AbstractRestfulController
             return $this->jsonResponse(['error' => 'Missing book_id, user_id, borrow_date, or return_date'], 400);
         }
 
+        $borrowDate = (string) $data['borrow_date'];
+        $returnDate = (string) $data['return_date'];
+
         try {
             $this->table->borrow(
                 (int) $data['book_id'],
                 (int) $data['user_id'],
-                $data['borrow_date'],
-                $data['return_date']
+                $borrowDate,
+                $returnDate
             );
             return $this->jsonResponse(['status' => 'success', 'message' => 'Book borrowed'], 201);
         } catch (\Exception $e) {
@@ -70,7 +76,7 @@ class BorrowApiController extends AbstractRestfulController
     }
 
     // PUT /api/borrows/:id (Usually for returning a book)
-    public function update($id, $data)
+    public function update(mixed $id, mixed $data)
     {
         $data = $this->resolvePayload($data);
         if (isset($data['action']) && $data['action'] === 'return') {
@@ -86,22 +92,24 @@ class BorrowApiController extends AbstractRestfulController
     }
 
     // DELETE /api/borrows/:id
-    public function delete($id)
+    public function delete(mixed $id)
     {
         return $this->jsonResponse(['error' => 'Delete operation not implemented for borrow records'], 501);
     }
 
     /**
      * @return array<string, mixed>
+     * @psalm-suppress MixedAssignment
      */
     private function resolvePayload(mixed $data): array
     {
-        $payload = json_decode($this->getRequest()->getContent(), true);
+        $content = $this->getRequest()->getContent();
+        $payload = is_string($content) ? json_decode($content, true) : null;
         if (is_array($payload)) {
-            return $payload;
+            return $this->normalizePayload($payload);
         }
 
-        return is_array($data) ? $data : [];
+        return is_array($data) ? $this->normalizePayload($data) : [];
     }
 
     /**
@@ -118,5 +126,20 @@ class BorrowApiController extends AbstractRestfulController
         $response->setContent((string) json_encode($data, JSON_UNESCAPED_UNICODE));
         $response->getHeaders()->addHeaderLine('Content-Type', 'application/json');
         return $response;
+    }
+
+    /**
+     * @param array<array-key, mixed> $payload
+     * @return array<string, mixed>
+     * @psalm-suppress MixedAssignment
+     */
+    private function normalizePayload(array $payload): array
+    {
+        $normalized = [];
+        foreach ($payload as $key => $value) {
+            $normalized[(string) $key] = $value;
+        }
+
+        return $normalized;
     }
 }

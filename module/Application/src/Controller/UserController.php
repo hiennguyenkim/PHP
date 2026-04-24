@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace Application\Controller;
@@ -21,8 +22,12 @@ class UserController extends BaseController
 
     public function indexAction(): ViewModel
     {
-        if ($r = $this->requireLogin()) return $r;
-        if ($r = $this->requireAdmin()) return $r;
+        if ($r = $this->requireLogin()) {
+            return $r;
+        }
+        if ($r = $this->requireAdmin()) {
+            return $r;
+        }
 
         $filters = [
             'search' => trim((string) $this->getRequest()->getQuery('search', '')),
@@ -39,8 +44,12 @@ class UserController extends BaseController
 
     public function createAction(): ViewModel
     {
-        if ($r = $this->requireLogin()) return $r;
-        if ($r = $this->requireAdmin()) return $r;
+        if ($r = $this->requireLogin()) {
+            return $r;
+        }
+        if ($r = $this->requireAdmin()) {
+            return $r;
+        }
 
         if ($this->getRequest()->isPost()) {
             $form   = $this->collectFormData();
@@ -66,8 +75,12 @@ class UserController extends BaseController
 
     public function editAction(): ViewModel
     {
-        if ($r = $this->requireLogin()) return $r;
-        if ($r = $this->requireAdmin()) return $r;
+        if ($r = $this->requireLogin()) {
+            return $r;
+        }
+        if ($r = $this->requireAdmin()) {
+            return $r;
+        }
 
         $id   = (int) $this->params()->fromRoute('id', 0);
         $user = $this->userModel->getById($id);
@@ -125,10 +138,14 @@ class UserController extends BaseController
 
     public function deleteAction()
     {
-        if ($r = $this->requireLogin()) return $r;
-        if ($r = $this->requireAdmin()) return $r;
+        if ($r = $this->requireLogin()) {
+            return $r;
+        }
+        if ($r = $this->requireAdmin()) {
+            return $r;
+        }
 
-        if (!$this->getRequest()->isPost()) {
+        if (! $this->getRequest()->isPost()) {
             return $this->redirect()->toRoute('user');
         }
 
@@ -169,8 +186,12 @@ class UserController extends BaseController
         ];
     }
 
-    private function buildFormView(string $mode, array $form = [], array $errors = [], array $loanHistory = []): ViewModel
-    {
+    private function buildFormView(
+        string $mode,
+        array $form = [],
+        array $errors = [],
+        array $loanHistory = []
+    ): ViewModel {
         $defaults = [
             'id' => '', 'full_name' => '', 'username' => '', 'email' => '',
             'role' => 'member', 'status' => 'active', 'password' => '', 'confirm_password' => '',
@@ -206,20 +227,24 @@ class UserController extends BaseController
 
         if ($form['email'] === '') {
             $errors['email'] = 'Email la bat buoc.';
-        } elseif (!filter_var($form['email'], FILTER_VALIDATE_EMAIL)) {
+        } elseif (! filter_var($form['email'], FILTER_VALIDATE_EMAIL)) {
             $errors['email'] = 'Email khong dung dinh dang.';
         }
 
-        if (!in_array($form['role'], ['admin', 'member'], true)) $errors['role'] = 'Vai tro khong hop le.';
-        if (!in_array($form['status'], ['active', 'inactive'], true)) $errors['status'] = 'Trang thai khong hop le.';
+        if (! in_array($form['role'], ['admin', 'member'], true)) {
+            $errors['role'] = 'Vai tro khong hop le.';
+        }
+        if (! in_array($form['status'], ['active', 'inactive'], true)) {
+            $errors['status'] = 'Trang thai khong hop le.';
+        }
 
-        if (!$isEdit && $form['password'] === '') {
+        if (! $isEdit && $form['password'] === '') {
             $errors['password'] = 'Mat khau la bat buoc.';
         } elseif ($form['password'] !== '' && mb_strlen($form['password']) < 6) {
             $errors['password'] = 'Mat khau phai co it nhat 6 ky tu.';
         }
 
-        if (!$isEdit || $form['password'] !== '') {
+        if (! $isEdit || $form['password'] !== '') {
             if ($form['confirm_password'] !== $form['password']) {
                 $errors['confirm_password'] = 'Mat khau xac nhan khong khop.';
             }

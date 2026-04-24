@@ -1,18 +1,22 @@
 <?php
+
 declare(strict_types=1);
 
 namespace Library\Model\Table;
 
 use Library\Model\Entity\BorrowRecord;
 use Laminas\Db\Sql\Expression;
-use Laminas\Db\TableGateway\TableGateway;
 use Laminas\Db\Sql\Select;
+use Laminas\Db\Sql\Where;
+use Laminas\Db\TableGateway\TableGateway;
 
 class BorrowTable
 {
     private const PK = 'borrow_id';
+    private const RETURNED_HISTORY_RETENTION_DAYS = 30;
 
     private TableGateway $tableGateway;
+    private bool $expiredReturnedHistoryCleaned = false;
 
     public function __construct(TableGateway $tableGateway)
     {
@@ -26,6 +30,8 @@ class BorrowTable
      */
     public function fetchAllWithDetails(array $filters = [], ?int $userId = null, int $limit = 0): array
     {
+        $this->cleanupExpiredReturnedHistory();
+
         $sql      = $this->tableGateway->getSql();
         $select   = $sql->select()
             ->columns([
@@ -34,6 +40,7 @@ class BorrowTable
                 'user_id',
                 'borrow_date',
                 'return_date',
+                'returned_at',
                 'created_at',
                 'status' => new Expression(
                     "CASE
@@ -43,47 +50,60 @@ class BorrowTable
                      END"
                 ),
             ])
-            ->join('books', 'borrow_records.book_id = books.book_id',
-                ['book_title' => 'title', 'book_isbn' => 'isbn'])
-            ->join('users', 'borrow_records.user_id = users.user_id',
-                ['full_name', 'username'])
+            ->join(
+                'books',
+                'borrow_records.book_id = books.book_id',
+                ['book_title' => 'title', 'book_isbn' => 'isbn']
+            )
+            ->join(
+                'users',
+                'borrow_records.user_id = users.user_id',
+                ['full_name', 'username']
+            )
             ->order('borrow_records.created_at DESC');
 
         if ($userId !== null) {
             $select->where(['borrow_records.user_id' => $userId]);
         }
 
-        if (($filters['search'] ?? '') !== '') {
-            $search = '%' . $filters['search'] . '%';
-            $select->where->nest
-                ->like('books.title', $search)
-                ->or
-                ->like('books.author', $search)
-                ->or
-                ->like('books.isbn', $search)
-                ->or
-                ->like('users.full_name', $search)
-                ->or
-                ->like('users.username', $search)
-                ->unnest();
+        $searchValue = trim((string) ($filters['search'] ?? ''));
+        if ($searchValue !== '') {
+            $search = '%' . $searchValue . '%';
+            $select->where(function (Where $where) use ($search): void {
+                $where->nest()
+                    ->like('books.title', $search)
+                    ->or
+                    ->like('books.author', $search)
+                    ->or
+                    ->like('books.isbn', $search)
+                    ->or
+                    ->like('users.full_name', $search)
+                    ->or
+                    ->like('users.username', $search)
+                    ->unnest();
+            });
         }
 
-        if (($filters['status'] ?? '') !== '') {
-            if ($filters['status'] === 'overdue') {
-                $select->where(new Expression(
-                    "(borrow_records.status = 'overdue' OR (borrow_records.status = 'borrowed' AND borrow_records.return_date < CURDATE()))"
-                ));
-            } elseif ($filters['status'] === 'borrowed') {
-                $select->where(new Expression(
+        $status = trim((string) ($filters['status'] ?? ''));
+        if ($status !== '') {
+            if ($status === 'overdue') {
+                $select->where(
+                    "(borrow_records.status = 'overdue' "
+                    . "OR (borrow_records.status = 'borrowed' "
+                    . "AND borrow_records.return_date < CURDATE()))"
+                );
+            } elseif ($status === 'borrowed') {
+                $select->where(
                     "(borrow_records.status = 'borrowed' AND borrow_records.return_date >= CURDATE())"
-                ));
+                );
             } else {
-                $select->where(['borrow_records.status' => $filters['status']]);
+                $select->where(['borrow_records.status' => $status]);
             }
         }
 
-        if ($userId === null && ($filters['user_id'] ?? '') !== '') {
-            $select->where(['borrow_records.user_id' => (int) $filters['user_id']]);
+        $filterUserId = trim((string) ($filters['user_id'] ?? ''));
+        if ($userId === null && $filterUserId !== '') {
+            $select->where(['borrow_records.user_id' => (int) $filterUserId]);
         }
 
         if ($limit > 0) {
@@ -95,6 +115,10 @@ class BorrowTable
 
         $records = [];
         foreach ($result as $row) {
+            if (! is_array($row)) {
+                continue;
+            }
+
             $record = new BorrowRecord();
             $record->exchangeArray($row);
             $records[] = $record;
@@ -104,12 +128,11 @@ class BorrowTable
 
     public function getRecord(int $id): BorrowRecord
     {
+        $this->cleanupExpiredReturnedHistory();
+
         $rowset = $this->tableGateway->select([self::PK => $id]);
-        $row    = null;
-        foreach ($rowset as $r) {
-            $row = $r;
-            break;
-        }
+        $row = $this->firstRecordFromRowset($rowset);
+
         if (! $row instanceof BorrowRecord) {
             throw new \RuntimeException(sprintf('Không tìm thấy phiếu mượn ID %d.', $id));
         }
@@ -118,22 +141,32 @@ class BorrowTable
 
     public function borrow(int $bookId, int $userId, string $borrowDate, string $returnDate): void
     {
+        $this->cleanupExpiredReturnedHistory();
+
         $this->tableGateway->insert([
             'book_id'     => $bookId,
             'user_id'     => $userId,
             'borrow_date' => $borrowDate,
             'return_date' => $returnDate,
             'status'      => 'borrowed',
+            'returned_at' => null,
         ]);
     }
 
     public function returnBook(int $id): void
     {
-        $this->tableGateway->update(['status' => 'returned'], [self::PK => $id]);
+        $this->cleanupExpiredReturnedHistory();
+
+        $this->tableGateway->update([
+            'status'      => 'returned',
+            'returned_at' => new Expression('NOW()'),
+        ], [self::PK => $id]);
     }
 
     public function countBorrowed(?int $userId = null): int
     {
+        $this->cleanupExpiredReturnedHistory();
+
         $sql    = $this->tableGateway->getSql();
         $select = $sql->select()->columns([
             'c' => new Expression(
@@ -152,11 +185,13 @@ class BorrowTable
 
         $stmt   = $sql->prepareStatementForSqlObject($select);
         $result = $stmt->execute();
-        return (int) $result->current()['c'];
+        return $this->extractCount($result->current());
     }
 
     public function countOverdue(?int $userId = null): int
     {
+        $this->cleanupExpiredReturnedHistory();
+
         $sql    = $this->tableGateway->getSql();
         $select = $sql->select()->columns([
             'c' => new Expression(
@@ -175,11 +210,13 @@ class BorrowTable
 
         $stmt   = $sql->prepareStatementForSqlObject($select);
         $result = $stmt->execute();
-        return (int) $result->current()['c'];
+        return $this->extractCount($result->current());
     }
 
     public function countReturned(?int $userId = null): int
     {
+        $this->cleanupExpiredReturnedHistory();
+
         $sql    = $this->tableGateway->getSql();
         $select = $sql->select()
             ->columns([
@@ -193,11 +230,13 @@ class BorrowTable
         $stmt   = $sql->prepareStatementForSqlObject($select);
         $result = $stmt->execute();
 
-        return (int) $result->current()['c'];
+        return $this->extractCount($result->current());
     }
 
     public function countDueSoon(int $userId, int $days = 7): int
     {
+        $this->cleanupExpiredReturnedHistory();
+
         $sql    = $this->tableGateway->getSql();
         $select = $sql->select()
             ->columns([
@@ -218,11 +257,13 @@ class BorrowTable
         $stmt   = $sql->prepareStatementForSqlObject($select);
         $result = $stmt->execute();
 
-        return (int) $result->current()['c'];
+        return $this->extractCount($result->current());
     }
 
     public function countActiveLoansForUser(int $userId): int
     {
+        $this->cleanupExpiredReturnedHistory();
+
         $sql    = $this->tableGateway->getSql();
         $select = $sql->select()
             ->columns([
@@ -238,11 +279,13 @@ class BorrowTable
         $stmt   = $sql->prepareStatementForSqlObject($select);
         $result = $stmt->execute();
 
-        return (int) $result->current()['c'];
+        return $this->extractCount($result->current());
     }
 
     public function hasOverdueLoans(int $userId): bool
     {
+        $this->cleanupExpiredReturnedHistory();
+
         $sql    = $this->tableGateway->getSql();
         $select = $sql->select()
             ->columns([self::PK])
@@ -257,6 +300,8 @@ class BorrowTable
 
     public function hasActiveLoan(int $userId, int $bookId): bool
     {
+        $this->cleanupExpiredReturnedHistory();
+
         $rowset = $this->tableGateway->select(function (Select $select) use ($userId, $bookId) {
             $select->columns([self::PK]);
             $select->where([
@@ -269,8 +314,27 @@ class BorrowTable
         return $rowset->count() > 0;
     }
 
+    public function hasActiveBorrowForBook(int $bookId): bool
+    {
+        $this->cleanupExpiredReturnedHistory();
+
+        $rowset = $this->tableGateway->select(function (Select $select) use ($bookId) {
+            $select->columns([self::PK]);
+            $select->where(['book_id' => $bookId]);
+            $select->where->in('status', ['borrowed', 'overdue']);
+            $select->limit(1);
+        });
+
+        return $rowset->count() > 0;
+    }
+
+    /**
+     * @psalm-suppress PossiblyUnusedMethod
+     */
     public function hasBorrowHistoryForBook(int $bookId): bool
     {
+        $this->cleanupExpiredReturnedHistory();
+
         $rowset = $this->tableGateway->select(function (Select $select) use ($bookId) {
             $select->columns([self::PK]);
             $select->where(['book_id' => $bookId]);
@@ -280,13 +344,70 @@ class BorrowTable
         return $rowset->count() > 0;
     }
 
+    public function hasBorrowHistoryForUser(int $userId): bool
+    {
+        $this->cleanupExpiredReturnedHistory();
+
+        $rowset = $this->tableGateway->select(function (Select $select) use ($userId) {
+            $select->columns([self::PK]);
+            $select->where(['user_id' => $userId]);
+            $select->limit(1);
+        });
+
+        return $rowset->count() > 0;
+    }
+
     public function getSummary(?int $userId = null): array
     {
+        $this->cleanupExpiredReturnedHistory();
+
         return [
             'borrowed'  => $this->countBorrowed($userId),
             'overdue'   => $this->countOverdue($userId),
             'returned'  => $this->countReturned($userId),
             'due_soon'  => $userId !== null ? $this->countDueSoon($userId) : 0,
         ];
+    }
+
+    private function cleanupExpiredReturnedHistory(): void
+    {
+        if ($this->expiredReturnedHistoryCleaned) {
+            return;
+        }
+
+        $sql = $this->tableGateway->getSql();
+        $delete = $sql->delete();
+        $delete->where(['status' => 'returned']);
+        $delete->where('returned_at IS NOT NULL');
+        $delete->where(sprintf(
+            'returned_at < DATE_SUB(NOW(), INTERVAL %d DAY)',
+            self::RETURNED_HISTORY_RETENTION_DAYS,
+        ));
+
+        $stmt = $sql->prepareStatementForSqlObject($delete);
+        $stmt->execute();
+
+        $this->expiredReturnedHistoryCleaned = true;
+    }
+
+    private function extractCount(mixed $current): int
+    {
+        if (! is_array($current)) {
+            return 0;
+        }
+
+        return (int) ($current['c'] ?? 0);
+    }
+
+    /**
+     * @psalm-suppress MixedAssignment
+     */
+    private function firstRecordFromRowset(iterable $rowset): ?BorrowRecord
+    {
+        foreach ($rowset as $row) {
+            return $row instanceof BorrowRecord ? $row : null;
+        }
+
+        return null;
     }
 }

@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace Library\View\Helper;
@@ -6,6 +7,9 @@ namespace Library\View\Helper;
 use Library\Session\AuthSessionContainer;
 use Laminas\View\Helper\AbstractHelper;
 
+/**
+ * @psalm-suppress DeprecatedClass
+ */
 class CurrentUserHelper extends AbstractHelper
 {
     public function __construct(private AuthSessionContainer $authSession)

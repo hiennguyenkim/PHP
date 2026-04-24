@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace Application\Controller;
@@ -24,7 +25,9 @@ class LoanController extends BaseController
 
     public function indexAction(): ViewModel
     {
-        if ($r = $this->requireLogin()) return $r;
+        if ($r = $this->requireLogin()) {
+            return $r;
+        }
 
         $isAdmin     = $this->isAdmin();
         $currentUser = $this->currentUser();
@@ -54,7 +57,9 @@ class LoanController extends BaseController
 
     public function createAction(): ViewModel
     {
-        if ($r = $this->requireLogin()) return $r;
+        if ($r = $this->requireLogin()) {
+            return $r;
+        }
 
         if ($this->isAdmin()) {
             // Admin POST
@@ -113,8 +118,12 @@ class LoanController extends BaseController
 
     public function editAction(): ViewModel
     {
-        if ($r = $this->requireLogin()) return $r;
-        if ($r = $this->requireAdmin()) return $r;
+        if ($r = $this->requireLogin()) {
+            return $r;
+        }
+        if ($r = $this->requireAdmin()) {
+            return $r;
+        }
 
         $id   = (int) $this->params()->fromRoute('id', 0);
         $loan = $this->loanModel->getById($id);
@@ -155,10 +164,14 @@ class LoanController extends BaseController
 
     public function approveAction()
     {
-        if ($r = $this->requireLogin()) return $r;
-        if ($r = $this->requireAdmin()) return $r;
+        if ($r = $this->requireLogin()) {
+            return $r;
+        }
+        if ($r = $this->requireAdmin()) {
+            return $r;
+        }
 
-        if (!$this->getRequest()->isPost()) {
+        if (! $this->getRequest()->isPost()) {
             return $this->redirect()->toRoute('loan');
         }
         try {
@@ -172,10 +185,14 @@ class LoanController extends BaseController
 
     public function markReturnAction()
     {
-        if ($r = $this->requireLogin()) return $r;
-        if ($r = $this->requireAdmin()) return $r;
+        if ($r = $this->requireLogin()) {
+            return $r;
+        }
+        if ($r = $this->requireAdmin()) {
+            return $r;
+        }
 
-        if (!$this->getRequest()->isPost()) {
+        if (! $this->getRequest()->isPost()) {
             return $this->redirect()->toRoute('loan');
         }
         try {
@@ -189,9 +206,11 @@ class LoanController extends BaseController
 
     public function cancelAction()
     {
-        if ($r = $this->requireLogin()) return $r;
+        if ($r = $this->requireLogin()) {
+            return $r;
+        }
 
-        if (!$this->getRequest()->isPost()) {
+        if (! $this->getRequest()->isPost()) {
             return $this->redirect()->toRoute('loan');
         }
 
@@ -208,7 +227,12 @@ class LoanController extends BaseController
 
         try {
             $this->loanModel->cancel($loanId);
-            Session::flash('success', $this->isAdmin() ? 'Da huy yeu cau muon sach.' : 'Da huy yeu cau muon sach cua ban.');
+            Session::flash(
+                'success',
+                $this->isAdmin()
+                    ? 'Da huy yeu cau muon sach.'
+                    : 'Da huy yeu cau muon sach cua ban.'
+            );
         } catch (\Throwable $e) {
             Session::flash('error', $e->getMessage());
         }
@@ -218,7 +242,9 @@ class LoanController extends BaseController
     // ── Private helpers ──────────────────────────────────────────────────
     private function isValidDate(string $value): bool
     {
-        if ($value === '') return false;
+        if ($value === '') {
+            return false;
+        }
         $d = \DateTime::createFromFormat('Y-m-d', $value);
         return $d !== false && $d->format('Y-m-d') === $value;
     }
@@ -236,8 +262,12 @@ class LoanController extends BaseController
         ];
     }
 
-    private function buildAdminFormView(string $mode, array $form = [], array $errors = [], ?array $loan = null): ViewModel
-    {
+    private function buildAdminFormView(
+        string $mode,
+        array $form = [],
+        array $errors = [],
+        ?array $loan = null
+    ): ViewModel {
         $defaults = [
             'id' => '', 'user_id' => '', 'book_id' => '',
             'borrow_date' => date('Y-m-d'), 'due_date' => date('Y-m-d', strtotime('+14 days')),
@@ -252,7 +282,13 @@ class LoanController extends BaseController
             'loan'          => $loan,
             'users'         => $this->userModel->getActiveOptions(),
             'books'         => $this->bookModel->getOptions(),
-            'statusOptions' => ['pending' => 'Cho duyet', 'borrowed' => 'Dang muon', 'overdue' => 'Qua han', 'returned' => 'Da tra', 'cancelled' => 'Da huy'],
+            'statusOptions' => [
+                'pending' => 'Cho duyet',
+                'borrowed' => 'Dang muon',
+                'overdue' => 'Qua han',
+                'returned' => 'Da tra',
+                'cancelled' => 'Da huy',
+            ],
         ]);
         $vm->setTemplate('application/loan/form');
         return $vm;
@@ -276,7 +312,7 @@ class LoanController extends BaseController
     private function validateAdminForm(array $form, ?int $loanId = null): array
     {
         $errors = [];
-        if (!filter_var($form['user_id'], FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]])) {
+        if (! filter_var($form['user_id'], FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]])) {
             $errors['user_id'] = 'Vui long chon thanh vien hop le.';
         } else {
             $user = $this->userModel->getById((int) $form['user_id']);
@@ -287,30 +323,36 @@ class LoanController extends BaseController
             }
         }
 
-        if (!filter_var($form['book_id'], FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]])) {
+        if (! filter_var($form['book_id'], FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]])) {
             $errors['book_id'] = 'Vui long chon sach hop le.';
         } else {
             $book = $this->bookModel->getById((int) $form['book_id']);
-            if ($book === null) $errors['book_id'] = 'Sach duoc chon khong ton tai.';
+            if ($book === null) {
+                $errors['book_id'] = 'Sach duoc chon khong ton tai.';
+            }
         }
 
-        if (!isset($errors['user_id']) && !isset($errors['book_id'])) {
+        if (! isset($errors['user_id']) && ! isset($errors['book_id'])) {
             if ($this->loanModel->userHasOpenLoanForBook((int) $form['user_id'], (int) $form['book_id'], $loanId)) {
                 $errors['book_id'] = 'Thanh vien nay dang co yeu cau hoac phieu muon mo doi voi dau sach nay.';
             }
         }
 
-        if (!$this->isValidDate($form['borrow_date'])) $errors['borrow_date'] = 'Ngay muon khong hop le.';
-        if (!$this->isValidDate($form['due_date'])) {
+        if (! $this->isValidDate($form['borrow_date'])) {
+            $errors['borrow_date'] = 'Ngay muon khong hop le.';
+        }
+        if (! $this->isValidDate($form['due_date'])) {
             $errors['due_date'] = 'Han tra khong hop le.';
         } elseif ($this->isValidDate($form['borrow_date']) && $form['due_date'] < $form['borrow_date']) {
             $errors['due_date'] = 'Han tra phai sau hoac bang ngay muon.';
         }
 
         $allowed = ['pending', 'borrowed', 'overdue', 'returned', 'cancelled'];
-        if (!in_array($form['status'], $allowed, true)) $errors['status'] = 'Trang thai khong hop le.';
+        if (! in_array($form['status'], $allowed, true)) {
+            $errors['status'] = 'Trang thai khong hop le.';
+        }
 
-        if ($form['returned_date'] !== '' && !$this->isValidDate($form['returned_date'])) {
+        if ($form['returned_date'] !== '' && ! $this->isValidDate($form['returned_date'])) {
             $errors['returned_date'] = 'Ngay tra thuc te khong hop le.';
         }
         if ($form['status'] !== 'returned' && $form['returned_date'] !== '') {
@@ -323,7 +365,7 @@ class LoanController extends BaseController
     private function validateMemberRequest(array $form, int $userId): array
     {
         $errors = [];
-        if (!filter_var($form['book_id'], FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]])) {
+        if (! filter_var($form['book_id'], FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]])) {
             $errors['book_id'] = 'Vui long chon sach can muon.';
         } else {
             $book = $this->bookModel->getById((int) $form['book_id']);

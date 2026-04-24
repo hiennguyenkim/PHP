@@ -1,8 +1,8 @@
 <?php
+
 declare(strict_types=1);
 
 namespace Application\Model;
-
 
 use PDO;
 
@@ -10,7 +10,10 @@ class UserModel
 {
     private PDO $connection;
 
-    public function __construct(\PDO $connection) { $this->connection = $connection; }
+    public function __construct(\PDO $connection)
+    {
+        $this->connection = $connection;
+    }
 
     public function getAll(array $filters = []): array
     {

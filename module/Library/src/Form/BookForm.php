@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace Library\Form;
@@ -8,6 +9,9 @@ use Laminas\Form\Element;
 use Laminas\InputFilter\InputFilter;
 use Laminas\Validator;
 
+/**
+ * @psalm-suppress MissingTemplateParam
+ */
 class BookForm extends Form
 {
     public function __construct()
@@ -92,6 +96,9 @@ class BookForm extends Form
         ]);
     }
 
+    /**
+     * @psalm-suppress DeprecatedClass
+     */
     private function buildInputFilter(): InputFilter
     {
         $filter = new InputFilter();
@@ -99,7 +106,10 @@ class BookForm extends Form
         $filter->add(['name' => 'id',    'required' => false]);
         $filter->add(['name' => 'title', 'required' => true,
             'filters'    => [['name' => \Laminas\Filter\StringTrim::class]],
-            'validators' => [['name' => \Laminas\Validator\StringLength::class, 'options' => ['min' => 2, 'max' => 255]]],
+            'validators' => [[
+                'name' => \Laminas\Validator\StringLength::class,
+                'options' => ['min' => 2, 'max' => 255],
+            ]],
         ]);
         $filter->add(['name' => 'author', 'required' => true,
             'filters'    => [['name' => \Laminas\Filter\StringTrim::class]],
@@ -114,7 +124,8 @@ class BookForm extends Form
         $filter->add(['name' => 'quantity',  'required' => true,
             'validators' => [
                 ['name' => \Laminas\Validator\Digits::class],
-                ['name' => \Laminas\Validator\Between::class, 'options' => ['min' => 1, 'max' => 999]],
+                ['name' => \Laminas\Validator\GreaterThan::class, 'options' => ['min' => 0]],
+                ['name' => \Laminas\Validator\LessThan::class, 'options' => ['max' => 1000]],
             ],
         ]);
         $filter->add(['name' => 'status', 'required' => true]);

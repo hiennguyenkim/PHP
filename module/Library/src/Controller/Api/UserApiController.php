@@ -1,17 +1,20 @@
 <?php
+
 declare(strict_types=1);
 
 namespace Library\Controller\Api;
 
 use Laminas\Http\Response;
 use Laminas\Mvc\Controller\AbstractRestfulController;
-use Library\Model\Table\UserTable;
 use Library\Model\Entity\User;
+use Library\Model\Table\UserTable;
 
+/**
+ * @psalm-suppress PropertyNotSetInConstructor
+ */
 class UserApiController extends AbstractRestfulController
 {
     private UserTable $table;
-
     public function __construct(UserTable $table)
     {
         $this->table = $table;
@@ -39,8 +42,9 @@ class UserApiController extends AbstractRestfulController
     }
 
     // GET /api/users/:id
-    public function get($id)
+    public function get(mixed $id)
     {
+
         try {
             $user = $this->table->getUser((int) $id);
             return $this->jsonResponse([
@@ -56,27 +60,38 @@ class UserApiController extends AbstractRestfulController
     }
 
     // POST /api/users
-    public function create($data)
+    public function create(mixed $data)
     {
         $data = $this->resolvePayload($data);
-        if (!isset($data['username']) || !isset($data['password']) || !isset($data['email'])) {
+        if (! isset($data['username']) || ! isset($data['password']) || ! isset($data['email'])) {
             return $this->jsonResponse(['error' => 'Missing username, password, or email'], 400);
         }
 
-        if ($this->table->usernameExists($data['username'])) {
+        $username = trim((string) $data['username']);
+        $password = (string) $data['password'];
+        $email = trim((string) $data['email']);
+        $fullName = isset($data['full_name'])
+            ? trim((string) $data['full_name'])
+            : $username;
+        $role = isset($data['role']) ? (string) $data['role'] : 'student';
+
+        if ($username === '' || $password === '' || $email === '') {
+            return $this->jsonResponse(['error' => 'Missing username, password, or email'], 400);
+        }
+
+        if ($this->table->usernameExists($username)) {
             return $this->jsonResponse(['error' => 'Username already exists'], 409);
         }
 
         $user = new User();
         $user->exchangeArray([
-            'username'  => $data['username'],
-            'email'     => $data['email'],
-            'full_name' => $data['full_name'] ?? $data['username'],
-            'role'      => $data['role'] ?? 'student',
+            'username'  => $username,
+            'email'     => $email,
+            'full_name' => $fullName,
+            'role'      => $role,
         ]);
-
         try {
-            $this->table->saveUser($user, password_hash($data['password'], PASSWORD_DEFAULT));
+            $this->table->saveUser($user, password_hash($password, PASSWORD_DEFAULT));
             return $this->jsonResponse(['status' => 'success', 'message' => 'User created', 'id' => $user->id], 201);
         } catch (\Exception $e) {
             return $this->jsonResponse(['error' => $e->getMessage()], 500);
@@ -84,17 +99,16 @@ class UserApiController extends AbstractRestfulController
     }
 
     // PUT /api/users/:id
-    public function update($id, $data)
+    public function update(mixed $id, mixed $data)
     {
         $data = $this->resolvePayload($data);
         try {
             $user = $this->table->getUser((int) $id);
             $user->exchangeArray($data);
             $user->id = (int) $id;
-
             $passwordHash = null;
             if (isset($data['password'])) {
-                $passwordHash = password_hash($data['password'], PASSWORD_DEFAULT);
+                $passwordHash = password_hash((string) $data['password'], PASSWORD_DEFAULT);
             }
 
             $this->table->saveUser($user, $passwordHash);
@@ -105,22 +119,24 @@ class UserApiController extends AbstractRestfulController
     }
 
     // DELETE /api/users/:id
-    public function delete($id)
+    public function delete(mixed $id)
     {
         return $this->jsonResponse(['error' => 'Delete operation not implemented for users'], 501);
     }
 
     /**
      * @return array<string, mixed>
+     * @psalm-suppress MixedAssignment
      */
     private function resolvePayload(mixed $data): array
     {
-        $payload = json_decode($this->getRequest()->getContent(), true);
+        $content = $this->getRequest()->getContent();
+        $payload = is_string($content) ? json_decode($content, true) : null;
         if (is_array($payload)) {
-            return $payload;
+            return $this->normalizePayload($payload);
         }
 
-        return is_array($data) ? $data : [];
+        return is_array($data) ? $this->normalizePayload($data) : [];
     }
 
     /**
@@ -137,5 +153,20 @@ class UserApiController extends AbstractRestfulController
         $response->setContent((string) json_encode($data, JSON_UNESCAPED_UNICODE));
         $response->getHeaders()->addHeaderLine('Content-Type', 'application/json');
         return $response;
+    }
+
+    /**
+     * @param array<array-key, mixed> $payload
+     * @return array<string, mixed>
+     * @psalm-suppress MixedAssignment
+     */
+    private function normalizePayload(array $payload): array
+    {
+        $normalized = [];
+        foreach ($payload as $key => $value) {
+            $normalized[(string) $key] = $value;
+        }
+
+        return $normalized;
     }
 }

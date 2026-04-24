@@ -23,7 +23,7 @@ $this->layout('layout/library-layout');
         </div>
     </div>
 
-    <?php if ($isEdit && isset($book) && $book->status === 'borrowed'): ?>
+    <?php if ($isEdit && isset($book) && $book->status === 'borrowed') : ?>
         <div class="alert alert-info">
             Sách này hiện hết bản khả dụng. Hệ thống sẽ tự chuyển trạng thái về <strong>đang mượn</strong> khi số lượng còn lại bằng 0.
         </div>
@@ -40,7 +40,7 @@ $this->layout('layout/library-layout');
                         <input type="text" name="title" class="form-control"
                                value="<?= htmlspecialchars((string) ($form->get('title')->getValue() ?? '')) ?>"
                                maxlength="255" required>
-                        <?php $messages = $form->get('title')->getMessages(); if ($messages): ?>
+                        <?php $messages = $form->get('title')->getMessages(); if ($messages) : ?>
                             <div class="text-danger small mt-1"><?= htmlspecialchars(implode(', ', $messages)) ?></div>
                         <?php endif; ?>
                     </div>
@@ -50,7 +50,7 @@ $this->layout('layout/library-layout');
                                value="<?= htmlspecialchars((string) ($form->get('isbn')->getValue() ?? '')) ?>"
                                placeholder="978-..."
                                maxlength="30">
-                        <?php $messages = $form->get('isbn')->getMessages(); if ($messages): ?>
+                        <?php $messages = $form->get('isbn')->getMessages(); if ($messages) : ?>
                             <div class="text-danger small mt-1"><?= htmlspecialchars(implode(', ', $messages)) ?></div>
                         <?php endif; ?>
                     </div>
@@ -60,7 +60,7 @@ $this->layout('layout/library-layout');
                         <input type="text" name="author" class="form-control"
                                value="<?= htmlspecialchars((string) ($form->get('author')->getValue() ?? '')) ?>"
                                required>
-                        <?php $messages = $form->get('author')->getMessages(); if ($messages): ?>
+                        <?php $messages = $form->get('author')->getMessages(); if ($messages) : ?>
                             <div class="text-danger small mt-1"><?= htmlspecialchars(implode(', ', $messages)) ?></div>
                         <?php endif; ?>
                     </div>
@@ -68,7 +68,7 @@ $this->layout('layout/library-layout');
                     <div class="col-md-3">
                         <label class="form-label fw-semibold">Thể loại *</label>
                         <?= $this->formSelect($form->get('category')->setAttribute('class', 'form-select')) ?>
-                        <?php $messages = $form->get('category')->getMessages(); if ($messages): ?>
+                        <?php $messages = $form->get('category')->getMessages(); if ($messages) : ?>
                             <div class="text-danger small mt-1"><?= htmlspecialchars(implode(', ', $messages)) ?></div>
                         <?php endif; ?>
                     </div>
@@ -77,7 +77,7 @@ $this->layout('layout/library-layout');
                         <label class="form-label fw-semibold">Bản khả dụng *</label>
                         <input type="number" name="quantity" class="form-control" min="1" max="999"
                                value="<?= htmlspecialchars((string) ($form->get('quantity')->getValue() ?: 1)) ?>" required>
-                        <?php $messages = $form->get('quantity')->getMessages(); if ($messages): ?>
+                        <?php $messages = $form->get('quantity')->getMessages(); if ($messages) : ?>
                             <div class="text-danger small mt-1"><?= htmlspecialchars(implode(', ', $messages)) ?></div>
                         <?php endif; ?>
                     </div>
@@ -88,7 +88,7 @@ $this->layout('layout/library-layout');
                             <option value="available" <?= $statusValue === 'available' ? 'selected' : '' ?>>Khả dụng</option>
                             <option value="unavailable" <?= $statusValue === 'unavailable' ? 'selected' : '' ?>>Không khả dụng</option>
                         </select>
-                        <?php $messages = $form->get('status')->getMessages(); if ($messages): ?>
+                        <?php $messages = $form->get('status')->getMessages(); if ($messages) : ?>
                             <div class="text-danger small mt-1"><?= htmlspecialchars(implode(', ', $messages)) ?></div>
                         <?php endif; ?>
                     </div>
@@ -105,7 +105,7 @@ $this->layout('layout/library-layout');
                 </div>
 
                 <?= $this->formHidden($form->get('csrf')) ?>
-                <?php $messages = $form->get('csrf')->getMessages(); if ($messages): ?>
+                <?php $messages = $form->get('csrf')->getMessages(); if ($messages) : ?>
                     <div class="text-danger small mt-3"><?= htmlspecialchars(implode(', ', $messages)) ?></div>
                 <?php endif; ?>
 

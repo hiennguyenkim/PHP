@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace Library\Form;
@@ -7,6 +8,9 @@ use Laminas\Form\Form;
 use Laminas\Form\Element;
 use Laminas\InputFilter\InputFilter;
 
+/**
+ * @psalm-suppress MissingTemplateParam
+ */
 class LoginForm extends Form
 {
     public function __construct()

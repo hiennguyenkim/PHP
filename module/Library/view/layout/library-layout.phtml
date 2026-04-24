@@ -32,7 +32,7 @@ $mainClass = $authUser
 ?>
 <div class="d-flex<?= $shellClass ?>">
     <!-- Sidebar -->
-    <?php if ($authUser): ?>
+    <?php if ($authUser) : ?>
     <nav class="sidebar p-3 d-flex flex-column" style="width:240px;flex-shrink:0">
         <div class="brand-logo mb-4">
             <i class="bi bi-book-half me-2"></i>HCMUE Library
@@ -54,7 +54,7 @@ $mainClass = $authUser
                     <i class="bi bi-arrow-left-right me-2"></i><?= $authUser['role'] === 'admin' ? 'Mượn / Trả sách' : 'Phiếu mượn của tôi' ?>
                 </a>
             </li>
-            <?php if ($authUser['role'] === 'admin'): ?>
+            <?php if ($authUser['role'] === 'admin') : ?>
             <li class="nav-item">
                 <a href="<?= $this->url('library/user') ?>" class="nav-link px-3 py-2">
                     <i class="bi bi-people me-2"></i>Người dùng
@@ -75,7 +75,7 @@ $mainClass = $authUser
     </nav>
     <?php endif; ?>
 
-    <?php if ($guestCatalogMode): ?>
+    <?php if ($guestCatalogMode) : ?>
         <div class="position-fixed top-0 end-0 p-3 p-md-4" style="z-index: 1030;">
             <a href="<?= $this->url('library/auth', ['action' => 'login']) ?>" class="btn btn-primary shadow-sm">
                 <i class="bi bi-box-arrow-in-right me-1"></i>Đăng nhập
@@ -87,25 +87,25 @@ $mainClass = $authUser
     <div class="flex-grow-1 d-flex flex-column">
         <!-- Flash Messages -->
         <?php $flash = $this->flashMessenger(); ?>
-        <?php if ($flash->hasSuccessMessages()): ?>
+        <?php if ($flash->hasSuccessMessages()) : ?>
             <div class="alert alert-success alert-dismissible m-3 mb-0" role="alert">
-                <?php foreach ($flash->getSuccessMessages() as $msg): ?>
+                <?php foreach ($flash->getSuccessMessages() as $msg) : ?>
                     <i class="bi bi-check-circle me-1"></i><?= htmlspecialchars($msg) ?>
                 <?php endforeach; ?>
                 <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
             </div>
         <?php endif; ?>
-        <?php if ($flash->hasErrorMessages()): ?>
+        <?php if ($flash->hasErrorMessages()) : ?>
             <div class="alert alert-danger alert-dismissible m-3 mb-0" role="alert">
-                <?php foreach ($flash->getErrorMessages() as $msg): ?>
+                <?php foreach ($flash->getErrorMessages() as $msg) : ?>
                     <i class="bi bi-exclamation-triangle me-1"></i><?= htmlspecialchars($msg) ?>
                 <?php endforeach; ?>
                 <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
             </div>
         <?php endif; ?>
-        <?php if ($flash->hasInfoMessages()): ?>
+        <?php if ($flash->hasInfoMessages()) : ?>
             <div class="alert alert-info alert-dismissible m-3 mb-0" role="alert">
-                <?php foreach ($flash->getInfoMessages() as $msg): ?>
+                <?php foreach ($flash->getInfoMessages() as $msg) : ?>
                     <?= htmlspecialchars($msg) ?>
                 <?php endforeach; ?>
                 <button type="button" class="btn-close" data-bs-dismiss="alert"></button>

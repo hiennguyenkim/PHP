@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace Application\Controller;
@@ -21,7 +22,7 @@ abstract class BaseController extends AbstractActionController
 
     protected function requireLogin(): ?ViewModel
     {
-        if (!Session::has('user')) {
+        if (! Session::has('user')) {
             Session::flash('error', 'Vui long dang nhap de truy cap trang nay.');
             $this->redirect()->toRoute('auth', ['action' => 'login']);
             return new ViewModel();

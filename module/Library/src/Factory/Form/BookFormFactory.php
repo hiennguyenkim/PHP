@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace Library\Factory\Form;
@@ -8,6 +9,9 @@ use Psr\Container\ContainerInterface;
 
 class BookFormFactory
 {
+    /**
+     * @psalm-suppress PossiblyUnusedParam
+     */
     public function __invoke(ContainerInterface $container): BookForm
     {
         return new BookForm();

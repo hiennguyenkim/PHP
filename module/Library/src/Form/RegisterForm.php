@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace Library\Form;
@@ -7,9 +8,13 @@ use Laminas\Form\Element;
 use Laminas\Form\Form;
 use Laminas\InputFilter\InputFilter;
 use Laminas\Validator\EmailAddress;
+use Laminas\Validator\Hostname;
 use Laminas\Validator\Identical;
 use Laminas\Validator\StringLength;
 
+/**
+ * @psalm-suppress MissingTemplateParam
+ */
 class RegisterForm extends Form
 {
     public function __construct()
@@ -75,7 +80,10 @@ class RegisterForm extends Form
             'required'   => true,
             'filters'    => [['name' => \Laminas\Filter\StringTrim::class]],
             'validators' => [[
-                'name' => EmailAddress::class,
+                'name'    => EmailAddress::class,
+                'options' => [
+                    'allow' => Hostname::ALLOW_DNS | Hostname::ALLOW_LOCAL,
+                ],
             ]],
         ]);
 

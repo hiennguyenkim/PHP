@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace Library\Model\Table;
@@ -6,6 +7,7 @@ namespace Library\Model\Table;
 use Library\Model\Entity\Book;
 use Laminas\Db\Sql\Expression;
 use Laminas\Db\Sql\Select;
+use Laminas\Db\Sql\Where;
 use Laminas\Db\TableGateway\TableGateway;
 use RuntimeException;
 
@@ -23,6 +25,21 @@ class BookTable
     public function fetchAll(array $filters = []): \Laminas\Db\ResultSet\ResultSetInterface
     {
         return $this->tableGateway->select(function (Select $select) use ($filters): void {
+            $select->columns([
+                'book_id',
+                'title',
+                'author',
+                'isbn',
+                'category',
+                'quantity',
+                'status',
+                'created_at',
+                'last_returned_at' => new Expression(
+                    '(SELECT MAX(br.returned_at) FROM borrow_records br '
+                    . 'WHERE br.book_id = books.book_id '
+                    . 'AND br.returned_at IS NOT NULL)'
+                ),
+            ]);
             $this->applyFilters($select, $filters);
             $select->order(self::PK . ' ASC');
         });
@@ -35,6 +52,21 @@ class BookTable
         $offset = ($safePage - 1) * $safePerPage;
 
         return $this->tableGateway->select(function (Select $select) use ($filters, $safePerPage, $offset): void {
+            $select->columns([
+                'book_id',
+                'title',
+                'author',
+                'isbn',
+                'category',
+                'quantity',
+                'status',
+                'created_at',
+                'last_returned_at' => new Expression(
+                    '(SELECT MAX(br.returned_at) FROM borrow_records br '
+                    . 'WHERE br.book_id = books.book_id '
+                    . 'AND br.returned_at IS NOT NULL)'
+                ),
+            ]);
             $this->applyFilters($select, $filters);
             $select->order(self::PK . ' ASC');
             $select->limit($safePerPage);
@@ -52,13 +84,13 @@ class BookTable
         $stmt = $sql->prepareStatementForSqlObject($select);
         $result = $stmt->execute();
 
-        return (int) ($result->current()['c'] ?? 0);
+        return $this->extractCount($result->current());
     }
 
     public function getBook(int $id): Book
     {
         $rowset = $this->tableGateway->select([self::PK => $id]);
-        $row    = $rowset->current();
+        $row    = $rowset instanceof \Iterator ? $rowset->current() : null;
         if (! $row instanceof Book) {
             throw new RuntimeException(sprintf('Không tìm thấy sách có ID %d.', $id));
         }
@@ -94,13 +126,16 @@ class BookTable
         $this->tableGateway->delete([self::PK => $id]);
     }
 
+    /**
+     * @psalm-suppress PossiblyUnusedMethod
+     */
     public function countAll(): int
     {
         $sql     = $this->tableGateway->getSql();
         $select  = $sql->select()->columns(['c' => new \Laminas\Db\Sql\Expression('COUNT(*)')]);
         $stmt    = $sql->prepareStatementForSqlObject($select);
         $result  = $stmt->execute();
-        return (int) $result->current()['c'];
+        return $this->extractCount($result->current());
     }
 
     public function fetchCategories(): array
@@ -116,6 +151,10 @@ class BookTable
         $categories = [];
 
         foreach ($result as $row) {
+            if (! is_array($row)) {
+                continue;
+            }
+
             $category = trim((string) ($row['category'] ?? ''));
             if ($category !== '') {
                 $categories[] = $category;
@@ -130,20 +169,26 @@ class BookTable
         $sql    = $this->tableGateway->getSql();
         $select = $sql->select()->columns([
             'total_titles'      => new \Laminas\Db\Sql\Expression('COUNT(*)'),
-            'available_titles'  => new \Laminas\Db\Sql\Expression("SUM(CASE WHEN status = 'available' THEN 1 ELSE 0 END)"),
-            'borrowed_titles'   => new \Laminas\Db\Sql\Expression("SUM(CASE WHEN status = 'borrowed' THEN 1 ELSE 0 END)"),
-            'unavailable_titles'=> new \Laminas\Db\Sql\Expression("SUM(CASE WHEN status = 'unavailable' THEN 1 ELSE 0 END)"),
+            'available_titles'  => new \Laminas\Db\Sql\Expression(
+                "SUM(CASE WHEN status = 'available' THEN 1 ELSE 0 END)"
+            ),
+            'borrowed_titles'   => new \Laminas\Db\Sql\Expression(
+                "SUM(CASE WHEN status = 'borrowed' THEN 1 ELSE 0 END)"
+            ),
+            'unavailable_titles' => new \Laminas\Db\Sql\Expression(
+                "SUM(CASE WHEN status = 'unavailable' THEN 1 ELSE 0 END)"
+            ),
             'total_copies'      => new \Laminas\Db\Sql\Expression('SUM(quantity)'),
         ]);
         $stmt   = $sql->prepareStatementForSqlObject($select);
-        $result = $stmt->execute()->current();
+        $summary = $this->normalizeSummaryRow($stmt->execute()->current());
 
         return [
-            'total_titles'       => (int) ($result['total_titles'] ?? 0),
-            'available_titles'   => (int) ($result['available_titles'] ?? 0),
-            'borrowed_titles'    => (int) ($result['borrowed_titles'] ?? 0),
-            'unavailable_titles' => (int) ($result['unavailable_titles'] ?? 0),
-            'total_copies'       => (int) ($result['total_copies'] ?? 0),
+            'total_titles'       => (int) ($summary['total_titles'] ?? 0),
+            'available_titles'   => (int) ($summary['available_titles'] ?? 0),
+            'borrowed_titles'    => (int) ($summary['borrowed_titles'] ?? 0),
+            'unavailable_titles' => (int) ($summary['unavailable_titles'] ?? 0),
+            'total_copies'       => (int) ($summary['total_copies'] ?? 0),
         ];
     }
 
@@ -184,23 +229,55 @@ class BookTable
 
     private function applyFilters(Select $select, array $filters): void
     {
-        if (($filters['search'] ?? '') !== '') {
-            $search = '%' . $filters['search'] . '%';
-            $select->where->nest
-                ->like('title', $search)
-                ->or
-                ->like('author', $search)
-                ->or
-                ->like('isbn', $search)
-                ->unnest();
+        $searchValue = trim((string) ($filters['search'] ?? ''));
+        if ($searchValue !== '') {
+            $search = '%' . $searchValue . '%';
+            $select->where(function (Where $where) use ($search): void {
+                $where->nest()
+                    ->like('title', $search)
+                    ->or
+                    ->like('author', $search)
+                    ->or
+                    ->like('isbn', $search)
+                    ->unnest();
+            });
         }
 
-        if (($filters['category'] ?? '') !== '') {
-            $select->where(['category' => $filters['category']]);
+        $category = trim((string) ($filters['category'] ?? ''));
+        if ($category !== '') {
+            $select->where(['category' => $category]);
         }
 
-        if (($filters['status'] ?? '') !== '') {
-            $select->where(['status' => $filters['status']]);
+        $status = trim((string) ($filters['status'] ?? ''));
+        if ($status !== '') {
+            $select->where(['status' => $status]);
         }
+    }
+
+    private function extractCount(mixed $current): int
+    {
+        if (! is_array($current)) {
+            return 0;
+        }
+
+        return (int) ($current['c'] ?? 0);
+    }
+
+    /**
+     * @return array<string, mixed>
+     * @psalm-suppress MixedAssignment
+     */
+    private function normalizeSummaryRow(mixed $row): array
+    {
+        if (! is_array($row)) {
+            return [];
+        }
+
+        $normalized = [];
+        foreach ($row as $key => $value) {
+            $normalized[(string) $key] = $value;
+        }
+
+        return $normalized;
     }
 }

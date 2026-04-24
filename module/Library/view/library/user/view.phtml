@@ -1,0 +1,165 @@
+<?php
+$this->headTitle('Chi tiết tài khoản');
+$this->layout('layout/library-layout');
+
+$statusMap = [
+    'borrowed' => ['Đang mượn', 'warning'],
+    'returned' => ['Đã trả', 'success'],
+    'overdue' => ['Quá hạn', 'danger'],
+];
+?>
+
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+    <div>
+        <h1 class="h3 fw-bold mb-0"><i class="bi bi-person-vcard me-2 text-primary"></i>Chi tiết tài khoản</h1>
+        <p class="text-muted mb-0">Xem thông tin đầy đủ và trạng thái mượn/trả của người dùng.</p>
+    </div>
+    <div class="d-flex gap-2">
+        <a href="<?= $this->url('library/user') ?>" class="btn btn-light">
+            <i class="bi bi-arrow-left me-1"></i>Quay lại danh sách
+        </a>
+        <a href="<?= $this->url('library/user', ['action' => 'edit', 'id' => $user->id]) ?>" class="btn btn-primary">
+            <i class="bi bi-pencil-square me-1"></i>Chỉnh sửa
+        </a>
+    </div>
+</div>
+
+<?php if (! $canDelete && $deleteBlockedReason !== null) : ?>
+    <div class="alert alert-warning d-flex align-items-center mb-4" role="alert">
+        <i class="bi bi-exclamation-triangle-fill me-2"></i>
+        <?= htmlspecialchars($deleteBlockedReason) ?>
+    </div>
+<?php endif; ?>
+
+<div class="row g-3 mb-3">
+    <div class="col-md-4">
+        <div class="card border-primary h-100">
+            <div class="card-body">
+                <div class="text-muted small mb-1">Lượt mượn đang hoạt động</div>
+                <div class="fs-3 fw-bold text-primary"><?= (int) $activeLoans ?></div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card border-danger h-100">
+            <div class="card-body">
+                <div class="text-muted small mb-1">Tình trạng quá hạn</div>
+                <div class="fs-5 fw-bold <?= $hasOverdueLoans ? 'text-danger' : 'text-success' ?>">
+                    <?= $hasOverdueLoans ? 'Có quá hạn' : 'Không có quá hạn' ?>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card border-secondary h-100">
+            <div class="card-body">
+                <div class="text-muted small mb-1">Lịch sử mượn/trả</div>
+                <div class="fs-5 fw-bold <?= $hasBorrowHistory ? 'text-warning' : 'text-success' ?>">
+                    <?= $hasBorrowHistory ? 'Đã phát sinh' : 'Chưa phát sinh' ?>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card shadow-sm border-0">
+    <div class="card-body">
+        <div class="row g-3">
+            <div class="col-md-6">
+                <div class="text-muted small">Mã tài khoản</div>
+                <div class="fw-semibold">#<?= (int) $user->id ?></div>
+            </div>
+            <div class="col-md-6">
+                <div class="text-muted small">Vai trò</div>
+                <div>
+                    <span class="badge <?= $user->role === 'admin' ? 'bg-warning text-dark' : 'bg-info text-dark' ?>">
+                        <?= $user->role === 'admin' ? 'Quản trị viên' : 'Sinh viên' ?>
+                    </span>
+                    <?php if ((int) $user->id === (int) $currentId) : ?>
+                        <span class="badge bg-light text-dark border ms-1">Bạn</span>
+                    <?php endif; ?>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="text-muted small">Họ và tên</div>
+                <div class="fw-semibold"><?= htmlspecialchars($user->fullName) ?></div>
+            </div>
+            <div class="col-md-6">
+                <div class="text-muted small">Tên đăng nhập</div>
+                <div><code>@<?= htmlspecialchars($user->username) ?></code></div>
+            </div>
+            <div class="col-md-6">
+                <div class="text-muted small">Email</div>
+                <div><?= htmlspecialchars($user->email) ?></div>
+            </div>
+            <div class="col-md-6">
+                <div class="text-muted small">Ngày tạo</div>
+                <div><?= htmlspecialchars($user->createdAt !== '' ? $user->createdAt : '—') ?></div>
+            </div>
+        </div>
+
+        <hr class="my-4">
+
+        <div class="d-flex flex-wrap gap-2">
+            <form method="POST"
+                  action="<?= $this->url('library/user', ['action' => 'delete', 'id' => $user->id]) ?>"
+                  data-confirm="Bạn có chắc muốn xóa sinh viên '<?= htmlspecialchars($user->fullName) ?>'?"
+                  class="d-inline">
+                <button type="submit" class="btn btn-outline-danger" <?= $canDelete ? '' : 'disabled' ?>>
+                    <i class="bi bi-trash me-1"></i>Xóa tài khoản
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="card shadow-sm border-0 mt-4">
+    <div class="card-header bg-white d-flex flex-wrap justify-content-between align-items-center gap-2">
+        <h2 class="h6 mb-0"><i class="bi bi-clock-history me-2 text-primary"></i>Lịch sử mượn / trả</h2>
+        <a href="<?= $this->url('library/transaction', [], ['query' => ['user_id' => (int) $user->id]]) ?>"
+           class="btn btn-sm btn-outline-primary">
+            <i class="bi bi-box-arrow-up-right me-1"></i>Mở trang mượn/trả
+        </a>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>#Phiếu</th>
+                        <th>Tên sách</th>
+                        <th>ISBN</th>
+                        <th>Ngày mượn</th>
+                        <th>Hạn trả</th>
+                        <th>Ngày trả</th>
+                        <th>Trạng thái</th>
+                    </tr>
+                </thead>
+                <tbody>
+                <?php if ($borrowRecords === []) : ?>
+                    <tr>
+                        <td colspan="7" class="text-center py-4 text-muted">
+                            Người dùng này chưa có lịch sử mượn/trả.
+                        </td>
+                    </tr>
+                <?php else : ?>
+                    <?php foreach ($borrowRecords as $record) : ?>
+                        <?php [$statusLabel, $statusClass] = $statusMap[$record->status] ?? [$record->status, 'secondary']; ?>
+                        <tr>
+                            <td class="text-muted">#<?= (int) $record->id ?></td>
+                            <td class="fw-semibold"><?= htmlspecialchars($record->bookTitle) ?></td>
+                            <td><code><?= htmlspecialchars($record->bookIsbn !== '' ? $record->bookIsbn : '—') ?></code></td>
+                            <td><?= htmlspecialchars($record->borrowDate) ?></td>
+                            <td class="<?= in_array($record->status, ['borrowed', 'overdue'], true) && $record->returnDate < date('Y-m-d') ? 'text-danger fw-bold' : '' ?>">
+                                <?= htmlspecialchars($record->returnDate) ?>
+                            </td>
+                            <td><?= htmlspecialchars($record->returnedAt !== '' ? $record->returnedAt : '—') ?></td>
+                            <td><span class="badge bg-<?= $statusClass ?>"><?= $statusLabel ?></span></td>
+                        </tr>
+                    <?php endforeach; ?>
+                <?php endif; ?>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

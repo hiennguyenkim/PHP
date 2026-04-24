@@ -30,13 +30,13 @@ $currentRoute = $this->serverUrl(true);
             </a>
 
             <nav class="nav-links<?= $currentUser ? ' nav-links-authenticated' : '' ?>">
-                <?php if ($currentUser): ?>
+                <?php if ($currentUser) : ?>
                     <a href="<?= $this->url('dashboard') ?>">Tong quan</a>
-                    <?php if ($isAdmin): ?>
+                    <?php if ($isAdmin) : ?>
                         <a href="<?= $this->url('book') ?>">Sach</a>
                         <a href="<?= $this->url('loan') ?>">Muon tra</a>
                         <a href="<?= $this->url('user') ?>">Thanh vien</a>
-                    <?php else: ?>
+                    <?php else : ?>
                         <a href="<?= $this->url('loan') ?>">Phieu muon cua toi</a>
                     <?php endif; ?>
                     <div class="user-chip">
@@ -44,7 +44,7 @@ $currentRoute = $this->serverUrl(true);
                         <small><?= htmlspecialchars(strtoupper((string)($currentUser['role'] ?? 'member')), ENT_QUOTES) ?></small>
                     </div>
                     <a href="<?= $this->url('auth', ['action' => 'logout']) ?>">Dang xuat</a>
-                <?php else: ?>
+                <?php else : ?>
                     <a href="<?= $this->url('auth', ['action' => 'login']) ?>">Dang nhap</a>
                     <a href="<?= $this->url('auth', ['action' => 'register']) ?>">Dang ky</a>
                 <?php endif; ?>

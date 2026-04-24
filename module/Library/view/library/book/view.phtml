@@ -1,0 +1,85 @@
+<?php
+$this->headTitle('Chi tiết sách');
+$this->layout('layout/library-layout');
+
+$statusMap = [
+    'available' => ['Sẵn sàng', 'success'],
+    'borrowed' => ['Đang mượn hết', 'warning'],
+    'unavailable' => ['Tạm khóa', 'secondary'],
+];
+[$statusLabel, $statusClass] = $statusMap[$book->status] ?? [$book->status, 'secondary'];
+?>
+
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+    <div>
+        <h1 class="h3 fw-bold mb-0"><i class="bi bi-book me-2 text-primary"></i>Chi tiết sách</h1>
+        <p class="text-muted mb-0">Xem thông tin đầy đủ của đầu sách trong thư viện.</p>
+    </div>
+    <div class="d-flex gap-2">
+        <a href="<?= $this->url('library/book') ?>" class="btn btn-light">
+            <i class="bi bi-arrow-left me-1"></i>Quay lại danh sách
+        </a>
+        <a href="<?= $this->url('library/book', ['action' => 'edit', 'id' => $book->id]) ?>" class="btn btn-primary">
+            <i class="bi bi-pencil-square me-1"></i>Chỉnh sửa
+        </a>
+    </div>
+</div>
+
+<?php if ($hasActiveBorrow) : ?>
+    <div class="alert alert-warning d-flex align-items-center mb-4" role="alert">
+        <i class="bi bi-exclamation-triangle-fill me-2"></i>
+        Sách này đang có lượt mượn chưa trả, chưa thể xóa.
+    </div>
+<?php endif; ?>
+
+<div class="card shadow-sm border-0">
+    <div class="card-body">
+        <div class="row g-3">
+            <div class="col-md-6">
+                <div class="text-muted small">Mã sách</div>
+                <div class="fw-semibold">#<?= (int) $book->id ?></div>
+            </div>
+            <div class="col-md-6">
+                <div class="text-muted small">Trạng thái</div>
+                <div><span class="badge bg-<?= $statusClass ?>"><?= $statusLabel ?></span></div>
+            </div>
+            <div class="col-md-6">
+                <div class="text-muted small">Tên sách</div>
+                <div class="fw-semibold"><?= htmlspecialchars($book->title) ?></div>
+            </div>
+            <div class="col-md-6">
+                <div class="text-muted small">Tác giả</div>
+                <div><?= htmlspecialchars($book->author) ?></div>
+            </div>
+            <div class="col-md-6">
+                <div class="text-muted small">ISBN</div>
+                <div><code><?= htmlspecialchars($book->isbn !== '' ? $book->isbn : '—') ?></code></div>
+            </div>
+            <div class="col-md-6">
+                <div class="text-muted small">Thể loại</div>
+                <div><span class="badge bg-light text-dark border"><?= htmlspecialchars($book->category) ?></span></div>
+            </div>
+            <div class="col-md-6">
+                <div class="text-muted small">Số bản khả dụng</div>
+                <div class="fw-semibold"><?= (int) $book->quantity ?></div>
+            </div>
+            <div class="col-md-6">
+                <div class="text-muted small">Ngày tạo</div>
+                <div><?= htmlspecialchars($book->createdAt !== '' ? $book->createdAt : '—') ?></div>
+            </div>
+        </div>
+
+        <hr class="my-4">
+
+        <div class="d-flex flex-wrap gap-2">
+            <form method="POST"
+                  action="<?= $this->url('library/book', ['action' => 'delete', 'id' => $book->id]) ?>"
+                  data-confirm="Bạn có chắc muốn xóa sách '<?= htmlspecialchars($book->title) ?>'?"
+                  class="d-inline">
+                <button type="submit" class="btn btn-outline-danger" <?= $hasActiveBorrow ? 'disabled' : '' ?>>
+                    <i class="bi bi-trash me-1"></i>Xóa sách
+                </button>
+            </form>
+        </div>
+    </div>
+</div>

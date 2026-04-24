@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace Library\Controller;
@@ -7,6 +8,7 @@ use Library\Model\Table\BookTable;
 use Library\Model\Table\BorrowTable;
 use Library\Model\Table\UserTable;
 use Library\Session\AuthSessionContainer;
+use Laminas\Http\Response;
 use Laminas\View\Model\ViewModel;
 
 /**
@@ -15,24 +17,26 @@ use Laminas\View\Model\ViewModel;
  */
 class DashboardController extends BaseController
 {
-    private BookTable   $bookTable;
+    private BookTable $bookTable;
     private BorrowTable $borrowTable;
-    private UserTable   $userTable;
+    private UserTable $userTable;
 
     public function __construct(
         AuthSessionContainer $authSessionContainer,
         BookTable $bookTable,
         BorrowTable $borrowTable,
         UserTable $userTable
-    )
-    {
+    ) {
         parent::__construct($authSessionContainer);
         $this->bookTable   = $bookTable;
         $this->borrowTable = $borrowTable;
         $this->userTable   = $userTable;
     }
 
-    public function indexAction()
+    /**
+     * @psalm-suppress InvalidReturnType
+     */
+    public function indexAction(): Response|ViewModel
     {
         if ($response = $this->requireLogin()) {
             return $response;

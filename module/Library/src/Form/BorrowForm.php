@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace Library\Form;
@@ -7,8 +8,15 @@ use Laminas\Form\Form;
 use Laminas\Form\Element;
 use Laminas\InputFilter\InputFilter;
 
+/**
+ * @psalm-suppress MissingTemplateParam
+ */
 class BorrowForm extends Form
 {
+    /**
+     * @param array<array-key, mixed> $bookOptions
+     * @param array<array-key, mixed> $userOptions
+     */
     public function __construct(array $bookOptions = [], array $userOptions = [])
     {
         parent::__construct('borrow_form');
@@ -19,20 +27,31 @@ class BorrowForm extends Form
     }
 
     /**
-     * @param array<int, string> $bookOptions
-     * @param array<int, string> $userOptions
+     * @param array<array-key, mixed> $bookOptions
+     * @param array<array-key, mixed> $userOptions
+     * @psalm-suppress MixedAssignment
      */
     public function setSelectionOptions(array $bookOptions, array $userOptions): void
     {
         $bookElement = $this->get('book_id');
         $userElement = $this->get('user_id');
 
+        $normalizedBookOptions = [];
+        foreach ($bookOptions as $key => $value) {
+            $normalizedBookOptions[(string) $key] = (string) $value;
+        }
+
+        $normalizedUserOptions = [];
+        foreach ($userOptions as $key => $value) {
+            $normalizedUserOptions[(string) $key] = (string) $value;
+        }
+
         if ($bookElement instanceof Element\Select) {
-            $bookElement->setValueOptions($bookOptions);
+            $bookElement->setValueOptions($normalizedBookOptions);
         }
 
         if ($userElement instanceof Element\Select) {
-            $userElement->setValueOptions($userOptions);
+            $userElement->setValueOptions($normalizedUserOptions);
         }
     }
 
@@ -60,7 +79,11 @@ class BorrowForm extends Form
             'name'       => 'return_date',
             'type'       => Element\Date::class,
             'options'    => ['label' => 'Hạn trả'],
-            'attributes' => ['class' => 'form-control', 'required' => true, 'value' => date('Y-m-d', strtotime('+14 days'))],
+            'attributes' => [
+                'class' => 'form-control',
+                'required' => true,
+                'value' => date('Y-m-d', strtotime('+14 days')),
+            ],
         ]);
         $this->add([
             'name' => 'csrf',

@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace Library;
@@ -20,6 +21,9 @@ class Module
         return is_array($config) ? $config : [];
     }
 
+    /**
+     * @psalm-suppress PossiblyUnusedMethod
+     */
     public function onBootstrap(MvcEvent $event): void
     {
         $container = $event->getApplication()->getServiceManager();

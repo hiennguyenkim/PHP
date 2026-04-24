@@ -1,9 +1,11 @@
 <?php
+
 declare(strict_types=1);
 
 namespace Library\Controller;
 
 use Library\Session\AuthSessionContainer;
+use Laminas\Http\Response;
 
 /**
  * @psalm-suppress PropertyNotSetInConstructor
@@ -16,7 +18,7 @@ class HomeController extends BaseController
         parent::__construct($authSessionContainer);
     }
 
-    public function indexAction()
+    public function indexAction(): Response
     {
         $currentUser = $this->currentUser();
         if ($currentUser !== null) {

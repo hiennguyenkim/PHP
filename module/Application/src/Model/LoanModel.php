@@ -1,8 +1,8 @@
 <?php
+
 declare(strict_types=1);
 
 namespace Application\Model;
-
 
 use PDO;
 
@@ -10,7 +10,10 @@ class LoanModel
 {
     private PDO $connection;
 
-    public function __construct(\PDO $connection) { $this->connection = $connection; }
+    public function __construct(\PDO $connection)
+    {
+        $this->connection = $connection;
+    }
 
     public function getAll(array $filters = []): array
     {
@@ -53,7 +56,13 @@ class LoanModel
                 SUM(CASE WHEN status = 'borrowed' THEN 1 ELSE 0 END) AS borrowed,
                 SUM(CASE WHEN status = 'overdue' THEN 1 ELSE 0 END) AS overdue,
                 SUM(CASE WHEN status = 'returned' THEN 1 ELSE 0 END) AS returned_total,
-                SUM(CASE WHEN status = 'returned' AND DATE(returned_date) = CURDATE() THEN 1 ELSE 0 END) AS returned_today,
+                SUM(
+                    CASE
+                        WHEN status = 'returned' AND DATE(returned_date) = CURDATE()
+                            THEN 1
+                        ELSE 0
+                    END
+                ) AS returned_today,
                 SUM(CASE WHEN status = 'cancelled' THEN 1 ELSE 0 END) AS cancelled
             FROM phieu_muon
         ";
@@ -186,11 +195,11 @@ class LoanModel
             $oldAffectsInventory = $this->affectsInventory($oldStatus);
             $newAffectsInventory = $this->affectsInventory($newStatus);
 
-            if ($oldAffectsInventory && ($oldBookId !== $newBookId || !$newAffectsInventory)) {
+            if ($oldAffectsInventory && ($oldBookId !== $newBookId || ! $newAffectsInventory)) {
                 $this->releaseBook($oldBookId);
             }
 
-            if ($newAffectsInventory && ($oldBookId !== $newBookId || !$oldAffectsInventory)) {
+            if ($newAffectsInventory && ($oldBookId !== $newBookId || ! $oldAffectsInventory)) {
                 $this->reserveBook($newBookId);
             }
 
@@ -287,7 +296,7 @@ class LoanModel
                 throw new \RuntimeException('Khong tim thay phieu muon can cap nhat.');
             }
 
-            if (!in_array((string) $existing['status'], ['borrowed', 'overdue'], true)) {
+            if (! in_array((string) $existing['status'], ['borrowed', 'overdue'], true)) {
                 throw new \RuntimeException('Chi phieu dang muon moi co the ghi nhan tra sach.');
             }
 
